@@ -9,5 +9,6 @@ def health(_request):
 
 urlpatterns = [
     path("api/health/", health),
+    path("api/text-translator/", include("utilities.text_translator.urls")),
     path("admin/", admin.site.urls),
 ]
