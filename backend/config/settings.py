@@ -19,12 +19,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "rest_framework",
     "corsheaders",
     "shared",
     "utilities.text_translator",
     "utilities.docx_translator",
     "utilities.youtube_downloader",
+    "utilities.personal_hub",
 ]
 
 MIDDLEWARE = [
