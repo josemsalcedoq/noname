@@ -30,8 +30,8 @@ function PersonalHubPage() {
         </p>
         <h1 className="font-mono text-3xl tracking-tight text-fg">Personal hub</h1>
         <p className="font-serif italic text-muted max-w-prose">
-          Local notes and todos. Gmail and Calendar arrive in a later phase
-          (requires a Google OAuth client; see plan 05).
+          Local notes and todos. Reminders fire as browser notifications while
+          this tab is open.
         </p>
       </header>
 

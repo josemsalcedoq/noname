@@ -270,12 +270,10 @@ Top-level folder, separate from `frontend/` so e2e can drive the whole product (
 - `docker compose up -d`, `make backend`, `make frontend` is the entire onboarding for a fresh checkout. `README.md` documents this.
 - `git status` clean, `git log` tells a readable story, every commit is in English.
 
-## Phase 11 — Personal hub (post-launch, multi-stage)
-See `plans/05-personal-hub.md` for full specs. Roll out in five sub-phases so each ships independently:
-- **11.1** — Notes CRUD (backend + frontend + pytest-bdd). No external deps.
-- **11.2** — Todos CRUD with optional `due_at` and `remind_at` (backend + frontend + tests).
-- **11.3** — Reminders polling: `/due` endpoint + `last_fired_at` cooldown + frontend poller + browser Notifications.
-- **11.4** — Google OAuth scaffold (`google-auth-oauthlib`), `OAuthCredential` model with Fernet encryption, "Connect / Disconnect" UI. Requires the user to set up a GCP project (documented in README).
-- **11.5** — Gmail read (inbox list, message render with `bleach` sanitization) + Google Calendar read (today + week panels).
+## Phase 11 — Personal hub (notes, todos, reminders)
+See `plans/05-personal-hub.md` for full specs. Three sub-phases, each shippable independently:
+- **11.1** ✅ Notes CRUD (backend + frontend + pytest-bdd). No external deps.
+- **11.2** ✅ Todos CRUD with optional `due_at` and `remind_at` (backend + frontend + tests).
+- **11.3** — Reminders polling: frontend `useDueReminders` hook polling `/due` every 60s + browser Notifications API + in-page "Reminders due" panel with snooze / dismiss / mark-done actions.
 
-**Order rationale:** local-only first so the utility is useful even without GCP setup; OAuth + Google features layer on top later.
+> Earlier draft included Phase 11.4 (Google OAuth scaffold) and 11.5 (Gmail/Calendar read). Both removed by user decision — kept the project local-only.
