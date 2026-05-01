@@ -20,4 +20,19 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
+  webServer: [
+    {
+      command: "pnpm --dir ../frontend dev",
+      url: "http://localhost:5173",
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      command:
+        "cd ../backend && poetry run python manage.py runserver 0.0.0.0:8000 --noreload",
+      url: "http://localhost:8000/api/health/",
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+  ],
 });

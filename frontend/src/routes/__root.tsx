@@ -38,7 +38,7 @@ function Sidebar() {
       </div>
       <nav className="flex-1 px-3 pb-8">
         <SidebarHeader>Translation</SidebarHeader>
-        <SidebarItem to="/text-translator" label="Text" disabled />
+        <SidebarItem to="/text-translator" label="Text" />
         <SidebarItem to="/docx-translator" label="DOCX" disabled />
         <SidebarHeader>Media</SidebarHeader>
         <SidebarItem to="/youtube-downloader" label="YouTube downloader" disabled />
