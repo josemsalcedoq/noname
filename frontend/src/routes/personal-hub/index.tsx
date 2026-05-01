@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { NotesTab } from "./-components/notes-tab";
+import { RemindersPanel } from "./-components/reminders-panel";
 import { TodosTab } from "./-components/todos-tab";
 
 type PersonalTab = "notes" | "todos";
@@ -34,6 +35,8 @@ function PersonalHubPage() {
           this tab is open.
         </p>
       </header>
+
+      <RemindersPanel />
 
       <nav className="flex gap-1 border-b border-border" aria-label="Personal hub tabs">
         {TABS.map((entry) => (

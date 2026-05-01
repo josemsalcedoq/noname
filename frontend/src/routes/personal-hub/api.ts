@@ -159,3 +159,37 @@ export function useDeleteTodo() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todos"] }),
   });
 }
+
+const DUE_URL = "/api/personal-hub/due";
+
+export function useDueReminders(withinSeconds = 300) {
+  return useQuery({
+    queryKey: ["due-reminders", withinSeconds],
+    queryFn: () => getJson<{ reminders: Todo[] }>(`${DUE_URL}?within=${withinSeconds}`),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+}
+
+export function useSnoozeTodo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, minutes }: { id: number; minutes: number }) =>
+      postJson<{ minutes: number }, Todo>(`${TODOS_URL}/${id}/snooze`, { minutes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["todos"] });
+      queryClient.invalidateQueries({ queryKey: ["due-reminders"] });
+    },
+  });
+}
+
+export function useDismissReminder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => patchJson<Todo>(`${TODOS_URL}/${id}`, { remind_at: null }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["todos"] });
+      queryClient.invalidateQueries({ queryKey: ["due-reminders"] });
+    },
+  });
+}
