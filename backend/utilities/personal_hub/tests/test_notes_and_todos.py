@@ -38,6 +38,11 @@ def _note_exists(state, title):
     state["note"] = Note.objects.create(title=title, body="")
 
 
+@given(parsers.parse('an archived note "{title}" exists'))
+def _archived_note_exists(state, title):
+    state["note"] = Note.objects.create(title=title, body="", archived_at=timezone.now())
+
+
 @given(parsers.parse('a todo "{title}" exists'))
 def _todo_exists(state, title):
     state["todo"] = Todo.objects.create(title=title)
@@ -106,6 +111,11 @@ def _search_notes(state, client, query):
 @when("the client archives the note")
 def _archive_note(state, client):
     state["response"] = client.post(f"/api/personal-hub/notes/{state['note'].id}/archive")
+
+
+@when("the client unarchives the note")
+def _unarchive_note(state, client):
+    state["response"] = client.post(f"/api/personal-hub/notes/{state['note'].id}/unarchive")
 
 
 @when("the client deletes the note")
@@ -212,6 +222,12 @@ def _active_notes_count(state, client, count):
 def _archived_notes_count(state, client, count):
     response = client.get("/api/personal-hub/notes?archived=true")
     assert len(response.json()) == count
+
+
+@then("the archived note list is empty")
+def _archived_notes_empty(state, client):
+    response = client.get("/api/personal-hub/notes?archived=true")
+    assert response.json() == []
 
 
 @then(parsers.parse('the open todo list contains a todo with title "{title}"'))

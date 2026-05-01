@@ -31,3 +31,16 @@ Feature: Personal hub — notes CRUD
     When the client deletes the note
     Then the response status is 204
     And the active note list is empty
+
+  Scenario: Unarchive a previously-archived note
+    Given an archived note "shelved" exists
+    When the client unarchives the note
+    Then the response status is 200
+    And the active note list has 1 entry
+    And the archived note list is empty
+
+  Scenario: Delete an archived note
+    Given an archived note "shelved" exists
+    When the client deletes the note
+    Then the response status is 204
+    And the archived note list is empty

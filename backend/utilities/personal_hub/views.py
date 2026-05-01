@@ -15,6 +15,8 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Note.objects.all()
+        if self.action != "list":
+            return queryset
         archived = self.request.query_params.get("archived")
         if archived == "true":
             queryset = queryset.filter(archived_at__isnull=False)
@@ -50,6 +52,8 @@ class TodoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Todo.objects.all()
+        if self.action != "list":
+            return queryset
         status_filter = self.request.query_params.get("status")
         if status_filter == "open":
             queryset = queryset.filter(completed_at__isnull=True)
