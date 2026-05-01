@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as YoutubeDownloaderIndexRouteImport } from './routes/youtube-downloader/index'
 import { Route as TextTranslatorIndexRouteImport } from './routes/text-translator/index'
 import { Route as DocxTranslatorIndexRouteImport } from './routes/docx-translator/index'
 import { Route as DevToolsIndexRouteImport } from './routes/dev-tools/index'
@@ -17,6 +18,11 @@ import { Route as DevToolsIndexRouteImport } from './routes/dev-tools/index'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const YoutubeDownloaderIndexRoute = YoutubeDownloaderIndexRouteImport.update({
+  id: '/youtube-downloader/',
+  path: '/youtube-downloader/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TextTranslatorIndexRoute = TextTranslatorIndexRouteImport.update({
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
+  '/youtube-downloader/': typeof YoutubeDownloaderIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dev-tools': typeof DevToolsIndexRoute
   '/docx-translator': typeof DocxTranslatorIndexRoute
   '/text-translator': typeof TextTranslatorIndexRoute
+  '/youtube-downloader': typeof YoutubeDownloaderIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,18 +61,30 @@ export interface FileRoutesById {
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
+  '/youtube-downloader/': typeof YoutubeDownloaderIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dev-tools/' | '/docx-translator/' | '/text-translator/'
+  fullPaths:
+    | '/'
+    | '/dev-tools/'
+    | '/docx-translator/'
+    | '/text-translator/'
+    | '/youtube-downloader/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dev-tools' | '/docx-translator' | '/text-translator'
+  to:
+    | '/'
+    | '/dev-tools'
+    | '/docx-translator'
+    | '/text-translator'
+    | '/youtube-downloader'
   id:
     | '__root__'
     | '/'
     | '/dev-tools/'
     | '/docx-translator/'
     | '/text-translator/'
+    | '/youtube-downloader/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -72,6 +92,7 @@ export interface RootRouteChildren {
   DevToolsIndexRoute: typeof DevToolsIndexRoute
   DocxTranslatorIndexRoute: typeof DocxTranslatorIndexRoute
   TextTranslatorIndexRoute: typeof TextTranslatorIndexRoute
+  YoutubeDownloaderIndexRoute: typeof YoutubeDownloaderIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -81,6 +102,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/youtube-downloader/': {
+      id: '/youtube-downloader/'
+      path: '/youtube-downloader'
+      fullPath: '/youtube-downloader/'
+      preLoaderRoute: typeof YoutubeDownloaderIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/text-translator/': {
@@ -112,6 +140,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevToolsIndexRoute: DevToolsIndexRoute,
   DocxTranslatorIndexRoute: DocxTranslatorIndexRoute,
   TextTranslatorIndexRoute: TextTranslatorIndexRoute,
+  YoutubeDownloaderIndexRoute: YoutubeDownloaderIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

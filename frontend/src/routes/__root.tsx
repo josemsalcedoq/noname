@@ -41,7 +41,7 @@ function Sidebar() {
         <SidebarItem to="/text-translator" label="Text" />
         <SidebarItem to="/docx-translator" label="DOCX" />
         <SidebarHeader>Media</SidebarHeader>
-        <SidebarItem to="/youtube-downloader" label="YouTube downloader" disabled />
+        <SidebarItem to="/youtube-downloader" label="YouTube downloader" />
         <SidebarHeader>Developer</SidebarHeader>
         <SidebarItem to="/dev-tools" label="Dev tools" />
       </nav>
