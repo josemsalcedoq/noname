@@ -28,18 +28,16 @@ test.describe("text translator", () => {
     await expect(page.getByTestId("target-lang")).toHaveValue("en");
   });
 
-  test("empty input does not call the backend", async ({ page }) => {
+  test("translate button is disabled while input is empty", async ({ page }) => {
     await page.goto("/text-translator");
 
-    const requests: string[] = [];
-    page.on("request", (r) => {
-      if (r.url().includes("/api/text-translator/translate")) requests.push(r.url());
-    });
+    const button = page.getByTestId("translate-button");
+    await expect(button).toBeDisabled();
 
-    await page.getByTestId("translate-button").click();
-    await page.waitForTimeout(300);
+    await page.getByTestId("source-textarea").fill("hello");
+    await expect(button).toBeEnabled();
 
-    expect(requests).toHaveLength(0);
-    await expect(page.getByTestId("target-textarea")).toHaveValue("");
+    await page.getByTestId("source-textarea").fill("");
+    await expect(button).toBeDisabled();
   });
 });
