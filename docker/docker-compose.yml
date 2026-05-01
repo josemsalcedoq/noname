@@ -1,0 +1,62 @@
+name: noname
+
+# Infra-only compose: Postgres + Redis + Adminer.
+# Backend (Django) and frontend (Vite) run on the host directly.
+#
+# Run from this folder:  docker compose up -d
+# Or from project root:  docker compose -f docker/docker-compose.yml up -d
+#
+# From the host, services are reachable at:
+#   postgres -> localhost:${POSTGRES_PORT:-5432}
+#   redis    -> localhost:${REDIS_PORT:-6379}
+#   adminer  -> http://localhost:${ADMINER_PORT:-8080}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: noname-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-noname}
+      POSTGRES_USER: ${POSTGRES_USER:-noname}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-noname}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-noname} -d ${POSTGRES_DB:-noname}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: noname-redis
+    restart: unless-stopped
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  adminer:
+    image: adminer:latest
+    container_name: noname-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
