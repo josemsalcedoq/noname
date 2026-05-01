@@ -48,21 +48,31 @@ def _summarize_qualities(formats: list[dict[str, Any]]) -> list[str]:
 
 def build_args(job: YoutubeJob, output_dir: Path) -> list[str]:
     output_template = str(output_dir / "%(title)s.%(ext)s")
-    args = ["yt-dlp", "--newline", "--restrict-filenames", "-o", output_template]
+    args = [
+        "yt-dlp",
+        "--newline",
+        "--restrict-filenames",
+        "-N",
+        "8",
+        "--http-chunk-size",
+        "10M",
+        "--no-mtime",
+        "-o",
+        output_template,
+    ]
     if job.mode == YoutubeJob.Mode.AUDIO:
         bitrate = job.quality.removeprefix("audio-").removesuffix("k") or "192"
         args += ["-x", "--audio-format", "mp3", "--audio-quality", bitrate]
     else:
         if job.quality == "best":
-            args += ["-f", "bestvideo+bestaudio/best", "--merge-output-format", "mp4"]
+            video_fmt = "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
         else:
             height = job.quality.removesuffix("p")
-            args += [
-                "-f",
-                f"bestvideo[height<={height}]+bestaudio/best[height<={height}]",
-                "--merge-output-format",
-                "mp4",
-            ]
+            video_fmt = (
+                f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]"
+                f"/best[height<={height}][ext=mp4]/best[height<={height}]"
+            )
+        args += ["-f", video_fmt, "--merge-output-format", "mp4"]
     args.append(job.url)
     return args
 
