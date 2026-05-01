@@ -30,5 +30,11 @@ backend/downloads/
 .vscode/
 *.swp
 
+# --- Playwright ---
+playwright/test-results/
+playwright/playwright-report/
+playwright/blob-report/
+playwright/.playwright/
+
 # --- Logs ---
 *.log
