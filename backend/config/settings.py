@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "shared",
     "utilities.text_translator",
+    "utilities.docx_translator",
 ]
 
 MIDDLEWARE = [
