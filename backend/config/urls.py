@@ -11,5 +11,6 @@ urlpatterns = [
     path("api/health/", health),
     path("api/text-translator/", include("utilities.text_translator.urls")),
     path("api/docx-translator/", include("utilities.docx_translator.urls")),
+    path("api/youtube-downloader/", include("utilities.youtube_downloader.urls")),
     path("admin/", admin.site.urls),
 ]

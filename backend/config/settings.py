@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "shared",
     "utilities.text_translator",
     "utilities.docx_translator",
+    "utilities.youtube_downloader",
 ]
 
 MIDDLEWARE = [
