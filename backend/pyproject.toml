@@ -15,7 +15,9 @@ dependencies = [
     "redis (>=7.4.0,<8.0.0)",
     "django-redis (>=6.0.0,<7.0.0)",
     "dj-database-url (>=3.1.2,<4.0.0)",
-    "python-dotenv (>=1.2.2,<2.0.0)"
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "argostranslate (>=1.11.0,<2.0.0)",
+    "lingua-language-detector (>=2.2.0,<3.0.0)"
 ]
 
 
