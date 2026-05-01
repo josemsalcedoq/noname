@@ -38,22 +38,23 @@ Already on disk:
 
 **Done when:** all three services healthy, can connect to Postgres from host.
 
-## Phase 2 — Backend scaffold (Django)
-1. `cd backend && uv init --package`
-2. `uv add django djangorestframework django-cors-headers daphne 'psycopg[binary]' redis django-redis dj-database-url python-dotenv`
-3. `uv add --dev pytest pytest-django pytest-bdd ruff`
-4. `uv run django-admin startproject config .`
-5. Create `backend/shared/__init__.py`, `backend/utilities/__init__.py`.
-6. Configure `config/settings.py`:
+## Phase 2 — Backend scaffold (Django + Poetry)
+1. `cd backend && poetry config virtualenvs.in-project true --local && poetry init --no-interaction --name backend --description "noname backend" --python ">=3.12,<3.14"`
+2. `poetry env use python3.13` (in-project `.venv`)
+3. `poetry add django djangorestframework django-cors-headers daphne 'psycopg[binary]' redis django-redis dj-database-url python-dotenv`
+4. `poetry add --group dev pytest pytest-django pytest-bdd ruff`
+5. `poetry run django-admin startproject config .`
+6. Create `backend/shared/__init__.py`, `backend/utilities/__init__.py`.
+7. Configure `config/settings.py`:
    - `DATABASES` ← `dj_database_url.parse(env("DATABASE_URL"))`
    - `CACHES` ← Redis via `django-redis`
    - `INSTALLED_APPS += rest_framework, corsheaders`
    - `CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]`
    - `ASGI_APPLICATION = "config.asgi.application"`
    - Read `DEBUG`, `SECRET_KEY` from env
-7. Create `backend/.env`: `DATABASE_URL=postgresql://noname:noname@localhost:5432/noname`, `REDIS_URL=redis://localhost:6379/0`, `DEBUG=true`, `SECRET_KEY=...`
-8. `uv run python manage.py migrate`
-9. Sanity: `uv run python manage.py runserver` → Django welcome at `:8000`.
+8. Create `backend/.env` (DATABASE_URL, REDIS_URL, DEBUG, SECRET_KEY, ALLOWED_HOSTS, CORS_ALLOWED_ORIGINS).
+9. `poetry run python manage.py migrate`
+10. Sanity: `poetry run python manage.py runserver` → `/api/health/` returns `{"status":"ok"}`.
 
 **Commits:**
 - `chore(backend): scaffold Django project`
@@ -103,12 +104,12 @@ Top-level folder, separate from `frontend/` so e2e can drive the whole product (
 **Done when:** `cd playwright && pnpm exec playwright test --list` runs without errors (zero specs is fine at this point).
 
 ## Phase 4 — Shared NMT engine
-1. `cd backend && uv add argostranslate lingua-language-detector`
+1. `cd backend && poetry add argostranslate lingua-language-detector`
 2. Create `backend/shared/nmt/`:
    - `engine.py` — `translate(text, source, target) -> str`, `detect(text) -> str`. Lazy-loads Argos models from `backend/models/`.
    - `manager.py` — discover available language pairs.
 3. Management command `backend/shared/management/commands/download_nmt_models.py` — pulls Argos `en→es` and `es→en` to `backend/models/`.
-4. `uv run python manage.py download_nmt_models`.
+4. `poetry run python manage.py download_nmt_models`.
 5. Sanity check in Django shell: `translate("hello world", "en", "es")` returns Spanish.
 
 **Commits:**
@@ -120,7 +121,7 @@ Top-level folder, separate from `frontend/` so e2e can drive the whole product (
 ## Phase 5 — Utility 02: text translator (first end-to-end slice)
 
 ### Backend
-1. `uv run python manage.py startapp text_translator utilities/text_translator`
+1. `poetry run python manage.py startapp text_translator utilities/text_translator`
 2. `serializers.py`: `TextTranslateRequest { source, target, text }`, `TextTranslateResponse { text, detected_source? }`.
 3. `views.py`: `TranslateView(APIView).post` → calls shared NMT.
 4. `urls.py`: `POST /api/text-translator/translate`.
@@ -146,8 +147,8 @@ Top-level folder, separate from `frontend/` so e2e can drive the whole product (
 ## Phase 6 — Utility 01: docx translator
 
 ### Backend
-1. `uv add python-docx`
-2. `uv run python manage.py startapp docx_translator utilities/docx_translator`
+1. `poetry add python-docx`
+2. `poetry run python manage.py startapp docx_translator utilities/docx_translator`
 3. `services/docx_translate.py` — open with `python-docx`, walk paragraphs/runs/tables/headers/footers; translate paragraph-as-whole, then redistribute output across original runs heuristically (preserve bold/italic). Return new `.docx` as bytes.
 4. `views.py`: `TranslateView` accepts multipart, returns `FileResponse`.
 5. `urls.py`: `POST /api/docx-translator/translate`.
@@ -191,10 +192,10 @@ Top-level folder, separate from `frontend/` so e2e can drive the whole product (
 
 ### Pre-reqs
 - `brew install ffmpeg` on the host.
-- `uv add yt-dlp`.
+- `poetry add yt-dlp`.
 
 ### Backend
-1. `uv run python manage.py startapp youtube_downloader utilities/youtube_downloader`
+1. `poetry run python manage.py startapp youtube_downloader utilities/youtube_downloader`
 2. Model `YoutubeJob` (uncomment the template in `docker/postgres/init/01-init.sql`, or just add via Django migrations — prefer migrations for reproducibility). Run `makemigrations` + `migrate`.
 3. `services/ytdlp.py`:
    - `probe(url)` → metadata via `yt-dlp -J`.

@@ -16,11 +16,11 @@ Single user (the developer). Runs locally on `localhost`. No data leaves the mac
 ## Stack
 
 ### Backend
-- **Python 3.12+**, **Django 5.x**, **Django REST Framework** for JSON APIs.
+- **Python 3.13** (pinned in `pyproject.toml`), **Django**, **Django REST Framework** for JSON APIs.
 - **Daphne** as the ASGI server (needed for SSE / async views in the YouTube progress stream). `runserver` is fine for day-to-day dev.
 - **PostgreSQL 16** (via Docker) for any persistent state utilities introduce (job history, settings).
 - **Redis 7** (via Docker) for SSE pub-sub and as a generic cache.
-- **`uv`** for dependency management (`pyproject.toml` + `uv.lock`).
+- **Poetry** for dependency management — in-project `.venv` (configured via `poetry config virtualenvs.in-project true --local`), `pyproject.toml` + `poetry.lock`.
 - **Testing:** `pytest` + `pytest-django` + `pytest-bdd` (Gherkin scenarios from each plan map directly to feature files).
 
 ### Frontend

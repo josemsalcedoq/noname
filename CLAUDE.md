@@ -24,7 +24,7 @@ Personal utilities hub. Stack, layout, and per-utility specs live in `plans/` (s
 - Backend: scenarios become pytest-bdd `.feature` files. Frontend e2e: scenarios become Playwright specs (where warranted).
 
 ## Stack discipline (see `plans/00-overview.md` for details)
-- **Backend:** Django 5 + DRF + Daphne, Postgres 16, Redis 7, `uv` for deps. Runs on the host.
+- **Backend:** Django + DRF + Daphne, Postgres 16, Redis 7, **Poetry** for deps (in-project `.venv`, Python 3.13). Runs on the host.
 - **Frontend:** React + Vite + TS + Tailwind + **TanStack Router + TanStack Query**, `pnpm`. Runs on the host.
 - **Docker:** infra only (Postgres / Redis / Adminer). Backend and frontend never live in Docker.
 - **No paid APIs, no LLMs** in any utility unless its plan explicitly opts in. NMT (Argos / OPUS-MT / NLLB) for translation, classical libs everywhere else.
