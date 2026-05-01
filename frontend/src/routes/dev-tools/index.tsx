@@ -1,12 +1,12 @@
 import type { ComponentType } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { EncoderDecoderTab } from "./_tabs/encoder-decoder";
-import { FormatConverterTab } from "./_tabs/format-converter";
-import { HashTab } from "./_tabs/hash";
-import { MarkdownTab } from "./_tabs/markdown";
-import { QrTab } from "./_tabs/qr";
-import { RegexTab } from "./_tabs/regex";
+import { EncoderDecoderTab } from "./-tabs/encoder-decoder";
+import { FormatConverterTab } from "./-tabs/format-converter";
+import { HashTab } from "./-tabs/hash";
+import { MarkdownTab } from "./-tabs/markdown";
+import { QrTab } from "./-tabs/qr";
+import { RegexTab } from "./-tabs/regex";
 
 export type DevToolsTab =
   | "format"
