@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TextTranslatorIndexRouteImport } from './routes/text-translator/index'
+import { Route as DocxTranslatorIndexRouteImport } from './routes/docx-translator/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const TextTranslatorIndexRoute = TextTranslatorIndexRouteImport.update({
   path: '/text-translator/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocxTranslatorIndexRoute = DocxTranslatorIndexRouteImport.update({
+  id: '/docx-translator/',
+  path: '/docx-translator/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/docx-translator': typeof DocxTranslatorIndexRoute
   '/text-translator': typeof TextTranslatorIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/text-translator/'
+  fullPaths: '/' | '/docx-translator/' | '/text-translator/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/text-translator'
-  id: '__root__' | '/' | '/text-translator/'
+  to: '/' | '/docx-translator' | '/text-translator'
+  id: '__root__' | '/' | '/docx-translator/' | '/text-translator/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DocxTranslatorIndexRoute: typeof DocxTranslatorIndexRoute
   TextTranslatorIndexRoute: typeof TextTranslatorIndexRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TextTranslatorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docx-translator/': {
+      id: '/docx-translator/'
+      path: '/docx-translator'
+      fullPath: '/docx-translator/'
+      preLoaderRoute: typeof DocxTranslatorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DocxTranslatorIndexRoute: DocxTranslatorIndexRoute,
   TextTranslatorIndexRoute: TextTranslatorIndexRoute,
 }
 export const routeTree = rootRouteImport
