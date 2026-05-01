@@ -269,3 +269,13 @@ Top-level folder, separate from `frontend/` so e2e can drive the whole product (
 - All four utility pages are reachable via the sidebar and look like they belong to the same product (design language coherent).
 - `docker compose up -d`, `make backend`, `make frontend` is the entire onboarding for a fresh checkout. `README.md` documents this.
 - `git status` clean, `git log` tells a readable story, every commit is in English.
+
+## Phase 11 — Personal hub (post-launch, multi-stage)
+See `plans/05-personal-hub.md` for full specs. Roll out in five sub-phases so each ships independently:
+- **11.1** — Notes CRUD (backend + frontend + pytest-bdd). No external deps.
+- **11.2** — Todos CRUD with optional `due_at` and `remind_at` (backend + frontend + tests).
+- **11.3** — Reminders polling: `/due` endpoint + `last_fired_at` cooldown + frontend poller + browser Notifications.
+- **11.4** — Google OAuth scaffold (`google-auth-oauthlib`), `OAuthCredential` model with Fernet encryption, "Connect / Disconnect" UI. Requires the user to set up a GCP project (documented in README).
+- **11.5** — Gmail read (inbox list, message render with `bleach` sanitization) + Google Calendar read (today + week panels).
+
+**Order rationale:** local-only first so the utility is useful even without GCP setup; OAuth + Google features layer on top later.

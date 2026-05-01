@@ -99,6 +99,7 @@ noname/
 │   ├── 02-text-translator.md
 │   ├── 03-youtube-downloader.md
 │   ├── 04-dev-tools.md
+│   ├── 05-personal-hub.md         # notes, todos, reminders, Gmail, Calendar
 │   └── IMPLEMENTATION.md          # phased roadmap, single source for build order
 ├── CLAUDE.md                      # project-wide rules (testing, language, conventions)
 └── README.md                      # one-page bring-up for a fresh checkout
