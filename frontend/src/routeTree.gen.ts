@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TextTranslatorIndexRouteImport } from './routes/text-translator/index'
 import { Route as DocxTranslatorIndexRouteImport } from './routes/docx-translator/index'
+import { Route as DevToolsIndexRouteImport } from './routes/dev-tools/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,33 +29,47 @@ const DocxTranslatorIndexRoute = DocxTranslatorIndexRouteImport.update({
   path: '/docx-translator/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevToolsIndexRoute = DevToolsIndexRouteImport.update({
+  id: '/dev-tools/',
+  path: '/dev-tools/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dev-tools': typeof DevToolsIndexRoute
   '/docx-translator': typeof DocxTranslatorIndexRoute
   '/text-translator': typeof TextTranslatorIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/docx-translator/' | '/text-translator/'
+  fullPaths: '/' | '/dev-tools/' | '/docx-translator/' | '/text-translator/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/docx-translator' | '/text-translator'
-  id: '__root__' | '/' | '/docx-translator/' | '/text-translator/'
+  to: '/' | '/dev-tools' | '/docx-translator' | '/text-translator'
+  id:
+    | '__root__'
+    | '/'
+    | '/dev-tools/'
+    | '/docx-translator/'
+    | '/text-translator/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DevToolsIndexRoute: typeof DevToolsIndexRoute
   DocxTranslatorIndexRoute: typeof DocxTranslatorIndexRoute
   TextTranslatorIndexRoute: typeof TextTranslatorIndexRoute
 }
@@ -82,11 +97,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocxTranslatorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev-tools/': {
+      id: '/dev-tools/'
+      path: '/dev-tools'
+      fullPath: '/dev-tools/'
+      preLoaderRoute: typeof DevToolsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DevToolsIndexRoute: DevToolsIndexRoute,
   DocxTranslatorIndexRoute: DocxTranslatorIndexRoute,
   TextTranslatorIndexRoute: TextTranslatorIndexRoute,
 }

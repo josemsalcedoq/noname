@@ -43,7 +43,7 @@ function Sidebar() {
         <SidebarHeader>Media</SidebarHeader>
         <SidebarItem to="/youtube-downloader" label="YouTube downloader" disabled />
         <SidebarHeader>Developer</SidebarHeader>
-        <SidebarItem to="/dev-tools" label="Dev tools" disabled />
+        <SidebarItem to="/dev-tools" label="Dev tools" />
       </nav>
       <div className="px-6 py-4 border-t border-border font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
         local · single-user
