@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "utilities.youtube_downloader",
     "utilities.personal_hub",
     "utilities.skills_catalog",
+    "utilities.http_client",
 ]
 
 MIDDLEWARE = [

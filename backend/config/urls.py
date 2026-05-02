@@ -14,5 +14,6 @@ urlpatterns = [
     path("api/youtube-downloader/", include("utilities.youtube_downloader.urls")),
     path("api/personal-hub/", include("utilities.personal_hub.urls")),
     path("api/skills/", include("utilities.skills_catalog.urls")),
+    path("api/http-client/", include("utilities.http_client.urls")),
     path("admin/", admin.site.urls),
 ]
