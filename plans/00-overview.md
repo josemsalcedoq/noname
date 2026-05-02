@@ -98,8 +98,14 @@ noname/
 │   ├── 01-docx-translator.md
 │   ├── 02-text-translator.md
 │   ├── 03-youtube-downloader.md
-│   ├── 04-dev-tools.md
-│   ├── 05-personal-hub.md         # notes, todos, reminders, Gmail, Calendar
+│   ├── 04-dev-tools.md            # 12 tabs (format, encode, JWT, hash, QR, regex, markdown, cron, diff, UUID, time, password)
+│   ├── 05-personal-hub.md         # notes, todos, reminders
+│   ├── 06-skills-catalog.md       # browse + install Anthropic skills
+│   ├── 07-http-client.md          # Postman-lite (collections, send, import, cURL, history)
+│   ├── 08-mcp-server.md           # MCP server exposing utilities to Claude Code
+│   ├── 09-srt-translator.md       # .srt cue translation EN ↔ ES
+│   ├── 10-audio-transcriber.md    # Whisper local (faster-whisper)
+│   ├── 11-pdf-tools.md            # merge, split, extract text, OCR
 │   └── IMPLEMENTATION.md          # phased roadmap, single source for build order
 ├── CLAUDE.md                      # project-wide rules (testing, language, conventions)
 └── README.md                      # one-page bring-up for a fresh checkout

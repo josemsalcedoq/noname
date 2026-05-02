@@ -7,13 +7,23 @@ A single page bundling small developer-oriented helpers as tabs. Each tab is ind
 - Day-to-day micro-tasks (decode a JWT, format JSON, hash a file, generate a QR) currently live across 5–10 random websites, most loaded with ads and tracking.
 - Doing it locally means **no data leaves the browser** — important for tokens, secrets, and API responses.
 
-## Scope of v1 — six tabs
+## Scope — twelve tabs
+
+### Original six (v1)
 1. **Format converter:** JSON ↔ YAML ↔ TOML ↔ CSV, with formatter / minifier / structural diff.
-2. **Encoder/decoder:** Base64 (text + file), URL-encode/decode, hex, JWT decoder (decode-only, no signature verification).
+2. **Encoder/decoder:** Base64 (text + file), URL-encode/decode, hex.
 3. **Hash / checksum:** MD5, SHA-1, SHA-256, SHA-512 — over text input or an uploaded file.
 4. **QR generator:** text → PNG/SVG, copy or download.
 5. **Regex tester:** live matches highlighted, named groups listed, flags toggleable, replace mode.
 6. **Markdown live preview:** split-pane editor + rendered HTML, GFM-flavored.
+
+### Added in v1.1 (six more)
+7. **JWT decoder** (split out of the encoder tab): pretty header + payload, highlights for `exp`/`iat`/`nbf` with relative time, opaque signature display, "signature not verified" notice. Lib: in-process base64url decode + JSON parse.
+8. **Cron explainer + builder:** human description (`cronstrue`), next 10 fires (`cron-parser`), preset shortcuts.
+9. **Diff viewer:** two textareas, `diff` lib, line/word/char modes, inline highlighting + add/remove counts.
+10. **UUID / nanoid generator:** batch generation, configurable count and (for nanoid) length.
+11. **Timestamp converter:** Unix epoch ↔ ISO 8601 ↔ RFC 2822 ↔ local ↔ relative; auto-detects seconds vs milliseconds.
+12. **Password generator:** crypto-strong random with charset toggles (A-Z, 0-9, !@#), entropy estimate, copy-per-result.
 
 ## Inputs / Outputs (per tab)
 | Tab | Input | Output |
@@ -151,11 +161,17 @@ Feature: Dev Tools — markdown preview
 - **State:** plain React state per tab. **No TanStack Query** here — no async server state to cache.
 - **Libs (all free, MIT/ISC):**
   - Format converter: `js-yaml` (YAML), `smol-toml` (TOML), `papaparse` (CSV), native `JSON`. Diff via `jsondiffpatch`.
-  - Encoder: native `btoa/atob`, `TextEncoder`, `encodeURIComponent`. JWT: split on `.` and base64url-decode the header/payload.
-  - Hash: **Web Crypto API** (`crypto.subtle.digest`) for SHA-1/256/512, plus `js-md5` for MD5 (Web Crypto doesn't support MD5). For files: stream chunks via `Blob.stream()` and feed an incremental hasher.
+  - Encoder: native `btoa/atob`, `TextEncoder`, `encodeURIComponent`.
+  - JWT: split on `.` and base64url-decode the header/payload (dedicated tab as of v1.1).
+  - Hash: **Web Crypto API** (`crypto.subtle.digest`) for SHA-1/256/512, plus `js-md5` for MD5 (Web Crypto doesn't support MD5).
   - QR: `qrcode` (npm).
   - Regex: native `RegExp`.
-  - Markdown: `markdown-it` + `markdown-it-highlightjs` for code blocks, with HTML disabled.
+  - Markdown: `markdown-it`, with HTML disabled.
+  - Cron: `cronstrue` + `cron-parser`.
+  - Diff: `diff` (npm) — line/word/char modes.
+  - UUID: native `crypto.randomUUID` for v4, `nanoid` for nanoid.
+  - Timestamp: native `Date` + `Intl.RelativeTimeFormat`.
+  - Password: `crypto.getRandomValues` (rejection sampling so charset modulo doesn't bias).
 
 ## Risks / open questions
 - Bundle size: six tabs' worth of libs adds up. **Mitigation:** lazy-load per tab, verify Lighthouse.

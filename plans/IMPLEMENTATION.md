@@ -277,3 +277,33 @@ See `plans/05-personal-hub.md` for full specs. Three sub-phases, each shippable 
 - **11.3** — Reminders polling: frontend `useDueReminders` hook polling `/due` every 60s + browser Notifications API + in-page "Reminders due" panel with snooze / dismiss / mark-done actions.
 
 > Earlier draft included Phase 11.4 (Google OAuth scaffold) and 11.5 (Gmail/Calendar read). Both removed by user decision — kept the project local-only.
+
+## Phase 12 — Chain handoffs between utilities (done)
+Small UX layer on top of existing utilities — no new backend. Adds "send to" buttons that pre-fill the next utility's input via `frontend/src/lib/handoff.ts` (typed sessionStorage helper).
+
+- **YouTube downloader → Audio transcriber**: button on a finished job loads the file blob into the transcriber.
+- **Audio transcriber → Text translator**: passes `result.text` + auto-detected source + opposite target.
+- **Audio transcriber → SRT translator**: passes `result.srt` as a synthetic File + source/target lang.
+
+End-to-end: paste a YouTube URL → 4 clicks → translated `.srt` on disk, all local.
+
+## Phase 13 — SRT subtitle translator (utility 09, done)
+See `plans/09-srt-translator.md`. Reuses the shared NMT engine. Cue indices and timestamps preserved exactly via the `srt` Python lib.
+
+## Phase 14 — Audio transcriber (utility 10, done)
+See `plans/10-audio-transcriber.md`. `faster-whisper` (CTranslate2 backend, CPU + int8). Models cached under `backend/models/huggingface/`. Per-segment timestamps + auto-built `.srt`.
+
+## Phase 15 — PDF tools (utility 11, done — Phase 1 only)
+See `plans/11-pdf-tools.md`. Merge, split (page ranges), extract text, OCR (`pytesseract` + `pypdfium2`).
+
+Future PDF phases (page ops, in-browser viewer, searchable OCR output, content editing) are noted in the plan as separate phases, not bundled into Phase 15.
+
+## Phase 16 — Dev tools v1.1 (done)
+Added six tabs to utility 04: dedicated JWT decoder, cron explainer, diff viewer, UUID generator, timestamp converter, password generator. See `plans/04-dev-tools.md` for the full inventory.
+
+## Phase 17 — HTTP client v2 (Phases 2.1–2.3, done)
+- cURL import (`shell-quote` tokenizer, recognizes the common flags).
+- "Copy as cURL" export (multi-line readable form).
+- Request history panel: `RequestRun` model, auto-record on every send, replay by clicking.
+
+Phases 2.4 (auth tabs) and 2.5 (drag-drop reorder) still future. See `plans/07-http-client.md`.

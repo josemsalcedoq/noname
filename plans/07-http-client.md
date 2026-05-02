@@ -10,13 +10,17 @@ A local HTTP client like Postman / Insomnia: organize saved requests in collecti
 
 ## Scope by phase
 
-| Phase | Deliverable                                                                           |
-|-------|---------------------------------------------------------------------------------------|
-| 1     | Collections, nested folders, saved requests, environments, send, Postman v2.1 import  |
-| 2     | History panel, curl export/import, auth tabs (basic/bearer), drag-drop reorder        |
-| 3     | Pre-request and test scripts (sandboxed JS), GraphQL/WebSocket support                |
+| Phase | Deliverable                                                                           | Status |
+|-------|---------------------------------------------------------------------------------------|--------|
+| 1     | Collections, nested folders, saved requests, environments, send, Postman v2.1 import  | done   |
+| 2.1   | cURL import (paste a `curl ...` command, fill the editor)                              | done   |
+| 2.2   | "Copy as cURL" export (build curl command from current state, copy to clipboard)      | done   |
+| 2.3   | Request history (auto-recorded `RequestRun`, replay by clicking)                      | done   |
+| 2.4   | Auth tabs (Basic, Bearer) that auto-inject the `Authorization` header                 | future |
+| 2.5   | Drag-drop reorder in the tree                                                         | future |
+| 3     | Pre-request and test scripts (sandboxed JS), GraphQL/WebSocket support                | future |
 
-This plan covers Phase 1 in detail.
+Phase 1 details below; Phase 2.1–2.3 details inline under "Tech notes" → "Phase 2 additions".
 
 ## Inputs / Outputs
 
@@ -160,9 +164,30 @@ Feature: Postman import
 - TanStack Query for everything; mutations invalidate the tree query.
 - Body view: pretty-print JSON / XML; show as plain text otherwise.
 
+### Phase 2 additions (implemented)
+
+**cURL import** (`frontend/src/routes/http-client/-components/curl.ts`):
+- Tokenizer: `shell-quote` `parse()` to handle quoted strings + line continuations.
+- Recognized flags: `-X`/`--request`, `-H`/`--header`, `-d`/`--data`/`--data-raw`/`--data-binary`/`--data-ascii`, `--data-urlencode`, `-u`/`--user` (→ Basic auth header), `-b`/`--cookie`, `-A`/`--user-agent`, `-e`/`--referer`. Boolean flags (`-L`, `-k`, `-s`, etc.) accepted as no-ops.
+- `--data-*` implies `POST` if no method specified.
+- Body type guessed from `Content-Type` header, then heuristics on the body shape.
+
+**cURL export** (same file):
+- Outputs a multi-line `curl ... \\\n  -X ... \\\n  -H ...` form for readability.
+- Uses minimal POSIX shell escaping; safe characters left bare, otherwise single-quoted.
+- Includes any enabled query params (folded back into URL).
+
+**Request history**:
+- Backend model `RequestRun(method, url, snapshot JSON, status, response_headers, response_body, duration_ms, size_bytes, truncated, error, sent_at, request_node FK nullable)`.
+- `SendView` writes a row on every send (success or failure). Response bodies capped at 64 KB in storage to keep the table tidy.
+- `RunViewSet` (read-only) at `GET /api/http-client/runs?limit=N&request_node=ID`. List uses `RequestRunSummarySerializer`; detail uses full `RequestRunSerializer`.
+- Frontend `HistoryPanel` is a third column on the page with the latest 30 runs. Click → loads working state from the run's snapshot for replay.
+
 ### Risks / open questions
 - **Body size cap** at 10MB — surfacing the truncation cleanly in UI.
 - **Streaming responses** — we read fully; v1 does not stream large bodies.
 - **Timeouts** — 30s upper bound; for genuinely long-running endpoints, user can edit the request to a smaller endpoint or split the work. Documented.
-- **Postman dynamic variables** (`{{$randomInt}}`, `{{$timestamp}}`) — preserved as-is in v1 (treated as unresolved). Phase 2 implements them.
+- **Postman dynamic variables** (`{{$randomInt}}`, `{{$timestamp}}`) — preserved as-is in v1 (treated as unresolved). Phase 3 implements them.
 - **Headers casing** — Postman v2.1 keeps original casing; we preserve it.
+- **History grows unbounded** — every send adds a row. v3 will add a retention policy or "clear history" action. For now, runs older than ~50 fall off the panel naturally because we only fetch the last 30–50.
+- **cURL parser edge cases** — scripts with `eval`-style escapes, ANSI-quoted strings, `--header=value` (vs space-separated): not all covered. Documented in the parser.
