@@ -16,10 +16,11 @@ Local-only PDF operations behind a tabbed page: merge multiple PDFs into one, sp
 |-------|--------------------------------------------------------------|--------|
 | 1     | Merge, split (page ranges), extract embedded text, OCR        | done   |
 | 2     | Page operations: reorder (up/down arrows), rotate, delete     | done   |
-| 2.1   | Insert blank page anywhere                                    | future |
-| 3     | In-browser viewer (PDF.js) + simple annotations (highlight)  | future |
-| 4     | Searchable PDF output from OCR (text layer, via `ocrmypdf`)  | future |
-| 5+    | Text-content editing, drawing, form fill, signatures         | future |
+| 2.1   | Insert blank page anywhere                                    | done   |
+| 3     | In-browser viewer (PDF.js) — view-only with zoom + paging     | done   |
+| 3.1   | Annotations (highlight, free-text, drawing) — canvas overlay  | future |
+| 4     | Searchable PDF output (text layer via `ocrmypdf`)             | done   |
+| 5+    | Text-content editing, form fill, signatures                   | future |
 
 ## Inputs / Outputs
 

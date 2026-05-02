@@ -32,10 +32,15 @@ A local **Model Context Protocol** server that wraps the noname backend utilitie
 In-process tools don't need the backend running — they're pure stdlib.
 
 ## Out of scope (v1)
-- YouTube downloader tool (long-polling makes it awkward as a synchronous MCP call — Phase 2 with a `wait_for_job` design).
-- MCP Resources (e.g. expose collections / notes as readable resources).
-- MCP Prompts (templated workflows).
+- ~~YouTube downloader tool~~ — added in Phase 2 (`youtube_probe` + `youtube_download(wait=true)` polls until done).
+- ~~MCP Resources~~ — added in Phase 2 (`noname://collections`, `noname://notes`, `noname://todos/open`, `noname://todos/done`, `noname://bookmarks`).
+- ~~MCP Prompts~~ — added in Phase 2 (`transcribe_and_translate`, `youtube_to_subtitles`).
 - Authentication (single-user local — Claude Code already runs as the user).
+
+## Phase 2 (done)
+- **Tools:** `youtube_probe`, `youtube_download(url, mode, quality, wait, timeout_seconds)` — polls the job every 2s until done/error/cancelled.
+- **Resources:** read-only views via `noname://...` URIs that Claude can fetch without invoking a tool.
+- **Prompts:** templated workflows hinting Claude at multi-tool sequences (transcribe → translate; YouTube → SRT).
 
 ## Configuration
 After `poetry install` in `mcp-server/`, the user adds this to their `~/.claude/settings.json`:

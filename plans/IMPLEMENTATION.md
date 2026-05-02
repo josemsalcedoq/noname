@@ -321,3 +321,19 @@ Still future and explicitly *not* in this turn:
 - PDF Phase 4 (searchable PDF via ocrmypdf)
 - PDF Phase 5+ (text-content editing, drawing, signing)
 - MCP Phase 2 (resources, prompts, YouTube tool with polling)
+
+## Phase 19 — Catch-up of all "future" buckets that fit in one turn (done)
+- **HTTP client tree reorder** (Phase 2.5): up/down arrow buttons next to each tree row, hover-revealed. Server-side updates `position` on every node in the affected sibling list. *Drag-drop deferred — needs `@dnd-kit/core` + recursive tree DnD state, ~300 LOC; not worth it for personal-use single-tree.*
+- **HTTP client GraphQL** (Phase 3 partial): no dedicated mode added, but documented that GraphQL works as-is via the `raw` body type with JSON `{"query": "...", "variables": {...}}`. Acknowledged honestly in plan 07.
+- **PDF Phase 2.1** (insert blank): operations now accept `{blank: true}` in addition to `{source, rotation}`. Frontend Pages tab has `+ blank` button per card to insert a blank page after.
+- **PDF Phase 3** (in-browser viewer): new "View" tab using PDF.js (`pdfjs-dist`). Page navigation, zoom in/out, native canvas rendering. *Annotations (highlight, draw, free-text) deferred to 3.1 — canvas overlay state machine.*
+- **PDF Phase 4** (searchable PDF): new "Searchable" tab. Backend wraps `ocrmypdf` CLI (`brew install ocrmypdf`); skips already-text pages with `--skip-text`; output is a downloadable PDF with a real text layer that any reader can search.
+- **MCP Phase 2** (resources + prompts + YouTube polling):
+  - Tools: `youtube_probe`, `youtube_download(wait, timeout_seconds)` poll until done.
+  - Resources: `noname://collections`, `noname://notes`, `noname://todos/open`, `noname://todos/done`, `noname://bookmarks` — Claude reads them without invoking a tool.
+  - Prompts: `transcribe_and_translate`, `youtube_to_subtitles` — templated multi-tool workflow hints.
+
+Honest still-future (each its own focused turn or weeks of work):
+- HTTP client Phase 3 — sandboxed JS pre-request scripts (security model required), WebSocket bidirectional transport (entirely new mode).
+- PDF Phase 3.1 — annotations canvas (highlight, free-text, drawing) with persistence.
+- PDF Phase 5+ — text-content editing inside pages, form-field filling, signatures.
