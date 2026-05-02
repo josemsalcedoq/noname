@@ -88,6 +88,8 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         <SidebarHeader>Media</SidebarHeader>
         <SidebarItem to="/youtube-downloader" label="YouTube downloader" />
         <SidebarItem to="/audio-transcriber" label="Audio transcriber" />
+        <SidebarHeader>Documents</SidebarHeader>
+        <SidebarItem to="/pdf-tools" label="PDF tools" />
         <SidebarHeader>Developer</SidebarHeader>
         <SidebarItem to="/dev-tools" label="Dev tools" />
         <SidebarItem to="/http-client" label="HTTP client" />

@@ -15,6 +15,7 @@ import { Route as TextTranslatorIndexRouteImport } from './routes/text-translato
 import { Route as SrtTranslatorIndexRouteImport } from './routes/srt-translator/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills/index'
 import { Route as PersonalHubIndexRouteImport } from './routes/personal-hub/index'
+import { Route as PdfToolsIndexRouteImport } from './routes/pdf-tools/index'
 import { Route as HttpClientIndexRouteImport } from './routes/http-client/index'
 import { Route as DocxTranslatorIndexRouteImport } from './routes/docx-translator/index'
 import { Route as DevToolsIndexRouteImport } from './routes/dev-tools/index'
@@ -50,6 +51,11 @@ const PersonalHubIndexRoute = PersonalHubIndexRouteImport.update({
   path: '/personal-hub/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PdfToolsIndexRoute = PdfToolsIndexRouteImport.update({
+  id: '/pdf-tools/',
+  path: '/pdf-tools/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HttpClientIndexRoute = HttpClientIndexRouteImport.update({
   id: '/http-client/',
   path: '/http-client/',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/http-client/': typeof HttpClientIndexRoute
+  '/pdf-tools/': typeof PdfToolsIndexRoute
   '/personal-hub/': typeof PersonalHubIndexRoute
   '/skills/': typeof SkillsIndexRoute
   '/srt-translator/': typeof SrtTranslatorIndexRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/dev-tools': typeof DevToolsIndexRoute
   '/docx-translator': typeof DocxTranslatorIndexRoute
   '/http-client': typeof HttpClientIndexRoute
+  '/pdf-tools': typeof PdfToolsIndexRoute
   '/personal-hub': typeof PersonalHubIndexRoute
   '/skills': typeof SkillsIndexRoute
   '/srt-translator': typeof SrtTranslatorIndexRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/http-client/': typeof HttpClientIndexRoute
+  '/pdf-tools/': typeof PdfToolsIndexRoute
   '/personal-hub/': typeof PersonalHubIndexRoute
   '/skills/': typeof SkillsIndexRoute
   '/srt-translator/': typeof SrtTranslatorIndexRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/dev-tools/'
     | '/docx-translator/'
     | '/http-client/'
+    | '/pdf-tools/'
     | '/personal-hub/'
     | '/skills/'
     | '/srt-translator/'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/dev-tools'
     | '/docx-translator'
     | '/http-client'
+    | '/pdf-tools'
     | '/personal-hub'
     | '/skills'
     | '/srt-translator'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/dev-tools/'
     | '/docx-translator/'
     | '/http-client/'
+    | '/pdf-tools/'
     | '/personal-hub/'
     | '/skills/'
     | '/srt-translator/'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   DevToolsIndexRoute: typeof DevToolsIndexRoute
   DocxTranslatorIndexRoute: typeof DocxTranslatorIndexRoute
   HttpClientIndexRoute: typeof HttpClientIndexRoute
+  PdfToolsIndexRoute: typeof PdfToolsIndexRoute
   PersonalHubIndexRoute: typeof PersonalHubIndexRoute
   SkillsIndexRoute: typeof SkillsIndexRoute
   SrtTranslatorIndexRoute: typeof SrtTranslatorIndexRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonalHubIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pdf-tools/': {
+      id: '/pdf-tools/'
+      path: '/pdf-tools'
+      fullPath: '/pdf-tools/'
+      preLoaderRoute: typeof PdfToolsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/http-client/': {
       id: '/http-client/'
       path: '/http-client'
@@ -241,6 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevToolsIndexRoute: DevToolsIndexRoute,
   DocxTranslatorIndexRoute: DocxTranslatorIndexRoute,
   HttpClientIndexRoute: HttpClientIndexRoute,
+  PdfToolsIndexRoute: PdfToolsIndexRoute,
   PersonalHubIndexRoute: PersonalHubIndexRoute,
   SkillsIndexRoute: SkillsIndexRoute,
   SrtTranslatorIndexRoute: SrtTranslatorIndexRoute,

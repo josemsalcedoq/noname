@@ -17,5 +17,6 @@ urlpatterns = [
     path("api/http-client/", include("utilities.http_client.urls")),
     path("api/srt-translator/", include("utilities.srt_translator.urls")),
     path("api/audio-transcriber/", include("utilities.audio_transcriber.urls")),
+    path("api/pdf-tools/", include("utilities.pdf_tools.urls")),
     path("admin/", admin.site.urls),
 ]

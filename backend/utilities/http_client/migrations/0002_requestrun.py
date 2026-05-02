@@ -5,32 +5,45 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('http_client', '0001_initial'),
+        ("http_client", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='RequestRun',
+            name="RequestRun",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('method', models.CharField(max_length=10)),
-                ('url', models.TextField()),
-                ('snapshot', models.JSONField(default=dict)),
-                ('status', models.IntegerField(blank=True, null=True)),
-                ('status_text', models.CharField(blank=True, default='', max_length=200)),
-                ('response_body', models.TextField(blank=True, default='')),
-                ('response_headers', models.JSONField(default=dict)),
-                ('duration_ms', models.IntegerField(blank=True, null=True)),
-                ('size_bytes', models.IntegerField(blank=True, null=True)),
-                ('truncated', models.BooleanField(default=False)),
-                ('error', models.TextField(blank=True, default='')),
-                ('sent_at', models.DateTimeField(auto_now_add=True)),
-                ('request_node', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='runs', to='http_client.requestnode')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("method", models.CharField(max_length=10)),
+                ("url", models.TextField()),
+                ("snapshot", models.JSONField(default=dict)),
+                ("status", models.IntegerField(blank=True, null=True)),
+                ("status_text", models.CharField(blank=True, default="", max_length=200)),
+                ("response_body", models.TextField(blank=True, default="")),
+                ("response_headers", models.JSONField(default=dict)),
+                ("duration_ms", models.IntegerField(blank=True, null=True)),
+                ("size_bytes", models.IntegerField(blank=True, null=True)),
+                ("truncated", models.BooleanField(default=False)),
+                ("error", models.TextField(blank=True, default="")),
+                ("sent_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "request_node",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="runs",
+                        to="http_client.requestnode",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-sent_at'],
+                "ordering": ["-sent_at"],
             },
         ),
     ]

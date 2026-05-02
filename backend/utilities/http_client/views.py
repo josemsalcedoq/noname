@@ -1,3 +1,4 @@
+import contextlib
 import json
 
 from rest_framework import status, viewsets
@@ -87,10 +88,8 @@ class SendView(APIView):
             "snapshot": snapshot,
         }
         if request_node_id is not None:
-            try:
+            with contextlib.suppress(TypeError, ValueError):
                 run_kwargs["request_node_id"] = int(request_node_id)
-            except (TypeError, ValueError):
-                pass
         if error is not None:
             run_kwargs["error"] = f"{error.code}: {error.detail}"[:8000]
         if payload is not None:

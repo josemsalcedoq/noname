@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "utilities.http_client",
     "utilities.srt_translator",
     "utilities.audio_transcriber",
+    "utilities.pdf_tools",
 ]
 
 MIDDLEWARE = [
