@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend (lint + tests)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: noname
+          POSTGRES_USER: noname
+          POSTGRES_PASSWORD: noname
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U noname"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://noname:noname@localhost:5432/noname
+      REDIS_URL: redis://localhost:6379/0
+      DEBUG: "false"
+      SECRET_KEY: ci-only-secret-not-for-production
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: backend/.venv
+          key: poetry-${{ runner.os }}-${{ hashFiles('backend/poetry.lock') }}
+
+      - name: Install backend deps
+        working-directory: backend
+        run: |
+          poetry config virtualenvs.in-project true --local
+          poetry install --no-interaction --no-root --no-ansi
+
+      - name: Lint (ruff format + check)
+        working-directory: backend
+        run: |
+          poetry run ruff format --check .
+          poetry run ruff check .
+
+      - name: Run pytest
+        working-directory: backend
+        run: poetry run pytest -q
+
+  frontend:
+    name: frontend (lint + typecheck + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store/v3
+          key: pnpm-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate route tree
+        working-directory: frontend
+        run: pnpm exec tsr generate
+
+      - name: ESLint
+        working-directory: frontend
+        run: pnpm exec eslint . --max-warnings 0
+
+      - name: Typecheck
+        working-directory: frontend
+        run: pnpm exec tsc --noEmit
+
+      - name: Build
+        working-directory: frontend
+        run: pnpm build
