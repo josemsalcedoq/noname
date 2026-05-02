@@ -5,44 +5,62 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Note',
+            name="Note",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('body', models.TextField(blank=True, default='')),
-                ('tags', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=50), blank=True, default=list)),
-                ('archived_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("body", models.TextField(blank=True, default="")),
+                (
+                    "tags",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.CharField(max_length=50), blank=True, default=list
+                    ),
+                ),
+                ("archived_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['-updated_at'],
+                "ordering": ["-updated_at"],
             },
         ),
         migrations.CreateModel(
-            name='Todo',
+            name="Todo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('body', models.TextField(blank=True, default='')),
-                ('tags', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=50), blank=True, default=list)),
-                ('due_at', models.DateTimeField(blank=True, null=True)),
-                ('remind_at', models.DateTimeField(blank=True, null=True)),
-                ('last_fired_at', models.DateTimeField(blank=True, null=True)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("body", models.TextField(blank=True, default="")),
+                (
+                    "tags",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.CharField(max_length=50), blank=True, default=list
+                    ),
+                ),
+                ("due_at", models.DateTimeField(blank=True, null=True)),
+                ("remind_at", models.DateTimeField(blank=True, null=True)),
+                ("last_fired_at", models.DateTimeField(blank=True, null=True)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['completed_at', 'due_at', '-created_at'],
+                "ordering": ["completed_at", "due_at", "-created_at"],
             },
         ),
     ]

@@ -24,7 +24,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def tree(self, request, pk=None):
         collection = self.get_object()
-        return Response({"id": collection.id, "name": collection.name, "items": services.collection_tree(collection)})
+        return Response(
+            {
+                "id": collection.id,
+                "name": collection.name,
+                "items": services.collection_tree(collection),
+            }
+        )
 
 
 class FolderViewSet(viewsets.ModelViewSet):

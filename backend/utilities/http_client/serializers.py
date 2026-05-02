@@ -58,7 +58,9 @@ class SendRequestSerializer(serializers.Serializer):
     url = serializers.CharField()
     headers = serializers.ListField(child=serializers.DictField(), required=False, default=list)
     params = serializers.ListField(child=serializers.DictField(), required=False, default=list)
-    body = serializers.CharField(allow_blank=True, required=False, default="", trim_whitespace=False)
+    body = serializers.CharField(
+        allow_blank=True, required=False, default="", trim_whitespace=False
+    )
     body_type = serializers.ChoiceField(
         choices=[c.value for c in RequestNode.BodyType], required=False, default="none"
     )

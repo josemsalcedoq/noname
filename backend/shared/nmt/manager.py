@@ -2,10 +2,7 @@ import argostranslate.package
 
 
 def installed_pairs() -> list[tuple[str, str]]:
-    return [
-        (pkg.from_code, pkg.to_code)
-        for pkg in argostranslate.package.get_installed_packages()
-    ]
+    return [(pkg.from_code, pkg.to_code) for pkg in argostranslate.package.get_installed_packages()]
 
 
 def ensure_pair(from_code: str, to_code: str) -> bool:

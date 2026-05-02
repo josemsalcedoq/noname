@@ -13,7 +13,9 @@ class Collection(models.Model):
 
 class Folder(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="folders")
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="children")
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="children"
+    )
     name = models.CharField(max_length=200)
     position = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -30,7 +32,9 @@ class RequestNode(models.Model):
         URLENCODED = "urlencoded"
 
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="requests")
-    folder = models.ForeignKey(Folder, on_delete=models.CASCADE, null=True, blank=True, related_name="requests")
+    folder = models.ForeignKey(
+        Folder, on_delete=models.CASCADE, null=True, blank=True, related_name="requests"
+    )
     name = models.CharField(max_length=200)
     method = models.CharField(max_length=10, default="GET")
     url = models.TextField()

@@ -22,7 +22,9 @@ class CatalogView(APIView):
                     {
                         **entry.to_dict(),
                         "installed": entry.name in installed,
-                        "install_path": str(services.install_path(entry.name)) if entry.name in installed else None,
+                        "install_path": str(services.install_path(entry.name))
+                        if entry.name in installed
+                        else None,
                     }
                     for entry in entries
                 ]
@@ -39,7 +41,10 @@ class InstalledView(APIView):
         try:
             services.install(name)
         except services.SkillNotFound:
-            return Response({"error": "not_found", "detail": f"Skill '{name}' not found upstream."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "not_found", "detail": f"Skill '{name}' not found upstream."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         return Response(
             {"name": name, "installed": True, "install_path": str(services.install_path(name))},
             status=status.HTTP_201_CREATED,

@@ -10,7 +10,11 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if h.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -29,6 +33,8 @@ INSTALLED_APPS = [
     "utilities.personal_hub",
     "utilities.skills_catalog",
     "utilities.http_client",
+    "utilities.srt_translator",
+    "utilities.audio_transcriber",
 ]
 
 MIDDLEWARE = [

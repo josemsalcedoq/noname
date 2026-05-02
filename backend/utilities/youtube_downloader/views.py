@@ -21,7 +21,9 @@ class ProbeView(APIView):
         serializer.is_valid(raise_exception=True)
         url = serializer.validated_data["url"]
         if not services.is_youtube_url(url):
-            return _error(status.HTTP_400_BAD_REQUEST, "unsupported_host", "Only YouTube URLs are supported.")
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_host", "Only YouTube URLs are supported."
+            )
         try:
             metadata = services.probe(url)
         except Exception as exc:  # noqa: BLE001
@@ -35,9 +37,13 @@ class DownloadView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         if not services.is_youtube_url(data["url"]):
-            return _error(status.HTTP_400_BAD_REQUEST, "unsupported_host", "Only YouTube URLs are supported.")
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_host", "Only YouTube URLs are supported."
+            )
         if YoutubeJob.objects.filter(status=YoutubeJob.Status.RUNNING).exists():
-            return _error(status.HTTP_409_CONFLICT, "job_already_running", "Another download is in progress.")
+            return _error(
+                status.HTTP_409_CONFLICT, "job_already_running", "Another download is in progress."
+            )
         job = YoutubeJob.objects.create(url=data["url"], mode=data["mode"], quality=data["quality"])
         services.start_download(job)
         return Response(JobSerializer(job).data, status=status.HTTP_201_CREATED)
@@ -66,5 +72,7 @@ class FileView(APIView):
             return _error(status.HTTP_404_NOT_FOUND, "no_file", "Job has no associated file.")
         path = Path(job.file_path)
         if not path.is_file():
-            return _error(status.HTTP_404_NOT_FOUND, "file_missing", "File no longer exists on disk.")
+            return _error(
+                status.HTTP_404_NOT_FOUND, "file_missing", "File no longer exists on disk."
+            )
         return FileResponse(open(path, "rb"), as_attachment=True, filename=path.name)

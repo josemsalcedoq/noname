@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import shlex
@@ -73,8 +74,7 @@ def build_args(job: YoutubeJob, output_dir: Path) -> list[str]:
     else:
         if job.quality == "best":
             video_fmt = (
-                "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
-                "/bestvideo+bestaudio/best"
+                "bestvideo[height<=1080]+bestaudio/best[height<=1080]/bestvideo+bestaudio/best"
             )
         else:
             height = job.quality.removesuffix("p")
@@ -156,10 +156,8 @@ def _extract_destination(line: str) -> str | None:
 
 def cancel(job: YoutubeJob) -> None:
     if job.pid:
-        try:
+        with contextlib.suppress(ProcessLookupError):
             os.kill(job.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
     job.status = YoutubeJob.Status.CANCELLED
     job.finished_at = timezone.now()
     job.save(update_fields=["status", "finished_at"])

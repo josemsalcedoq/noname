@@ -10,7 +10,9 @@ from docx.table import _Cell
 Translator = Callable[[str, str, str], str]
 
 
-def translate_docx(stream: io.BufferedReader | io.BytesIO, *, source: str, target: str, translator: Translator) -> bytes:
+def translate_docx(
+    stream: io.BufferedReader | io.BytesIO, *, source: str, target: str, translator: Translator
+) -> bytes:
     document: DocumentType = Document(stream)
     for paragraph in _iter_paragraphs(document):
         _translate_paragraph(paragraph, source=source, target=target, translator=translator)

@@ -28,5 +28,16 @@ class DownloadRequestSerializer(serializers.Serializer):
 class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = YoutubeJob
-        fields = ("id", "url", "mode", "quality", "status", "progress", "file_path", "error", "started_at", "finished_at")
+        fields = (
+            "id",
+            "url",
+            "mode",
+            "quality",
+            "status",
+            "progress",
+            "file_path",
+            "error",
+            "started_at",
+            "finished_at",
+        )
         read_only_fields = fields

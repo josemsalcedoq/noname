@@ -1,6 +1,4 @@
-import io
-
-from django.http import FileResponse
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -8,11 +6,10 @@ from rest_framework.views import APIView
 
 from shared.nmt import engine
 
-from .services import translate_docx
+from .services import InvalidSrt, translate_srt
 
-MAX_BYTES = 25 * 1024 * 1024
+MAX_BYTES = 5 * 1024 * 1024
 SUPPORTED = ("en", "es")
-DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
 class TranslateView(APIView):
@@ -39,31 +36,29 @@ class TranslateView(APIView):
             )
         if upload.size > MAX_BYTES:
             return _error(
-                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum size is 25 MB."
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum size is 5 MB."
             )
-        if not upload.name.lower().endswith(".docx"):
+        if not upload.name.lower().endswith(".srt"):
             return _error(
-                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .docx files are accepted."
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .srt files are accepted."
             )
 
         try:
-            translated_bytes = translate_docx(
-                io.BytesIO(upload.read()),
-                source=source,
-                target=target,
-                translator=engine.translate,
+            content = upload.read().decode("utf-8")
+        except UnicodeDecodeError as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "invalid_encoding", str(exc))
+
+        try:
+            translated = translate_srt(
+                content, source=source, target=target, translator=engine.translate
             )
-        except Exception as exc:  # noqa: BLE001 — surface a generic error
-            return _error(status.HTTP_400_BAD_REQUEST, "invalid_docx", str(exc))
+        except InvalidSrt as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "invalid_srt", str(exc))
 
         stem = upload.name.rsplit(".", 1)[0]
-        filename = f"{stem}_{target}.docx"
-        response = FileResponse(
-            io.BytesIO(translated_bytes),
-            as_attachment=True,
-            filename=filename,
-            content_type=DOCX_MIME,
-        )
+        filename = f"{stem}_{target}.srt"
+        response = HttpResponse(translated.encode("utf-8"), content_type="application/x-subrip")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
 

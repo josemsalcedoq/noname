@@ -67,7 +67,9 @@ def _todo_with_remind_1min(state, title):
     )
 
 
-@given(parsers.parse('a completed todo "{title}" with remind_at {seconds:d} seconds from now exists'))
+@given(
+    parsers.parse('a completed todo "{title}" with remind_at {seconds:d} seconds from now exists')
+)
 def _completed_todo_with_remind(state, title, seconds):
     state["todo"] = Todo.objects.create(
         title=title,
@@ -85,7 +87,9 @@ def _post_note(state, client, title, body):
     )
 
 
-@when(parsers.parse('the client posts a note with title "{title}" and a body of {size:d} characters'))
+@when(
+    parsers.parse('the client posts a note with title "{title}" and a body of {size:d} characters')
+)
 def _post_oversize_note(state, client, title, size):
     state["response"] = client.post(
         "/api/personal-hub/notes",

@@ -8,7 +8,9 @@ MAX_INPUT_LENGTH = 50_000
 class TranslateRequestSerializer(serializers.Serializer):
     source = serializers.ChoiceField(choices=SOURCE_CHOICES)
     target = serializers.ChoiceField(choices=SUPPORTED_LANGUAGES)
-    text = serializers.CharField(allow_blank=True, max_length=MAX_INPUT_LENGTH, trim_whitespace=False)
+    text = serializers.CharField(
+        allow_blank=True, max_length=MAX_INPUT_LENGTH, trim_whitespace=False
+    )
 
 
 class TranslateResponseSerializer(serializers.Serializer):

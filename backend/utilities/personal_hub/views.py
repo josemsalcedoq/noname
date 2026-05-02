@@ -112,4 +112,6 @@ class DueRemindersView(viewsets.ViewSet):
         ids = list(queryset.values_list("id", flat=True))
         Todo.objects.filter(id__in=ids).update(last_fired_at=now)
         refreshed = Todo.objects.filter(id__in=ids).order_by("remind_at")
-        return Response({"reminders": TodoSerializer(refreshed, many=True).data}, status=status.HTTP_200_OK)
+        return Response(
+            {"reminders": TodoSerializer(refreshed, many=True).data}, status=status.HTTP_200_OK
+        )

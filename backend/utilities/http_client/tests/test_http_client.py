@@ -1,13 +1,12 @@
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 import requests
 from django.test import Client
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from utilities.http_client.models import Collection, Environment, Folder, RequestNode
+from utilities.http_client.models import Environment, RequestNode
 
 FEATURES_DIR = Path(__file__).parent / "features"
 scenarios(str(FEATURES_DIR / "send.feature"))
@@ -17,7 +16,9 @@ pytestmark = pytest.mark.django_db
 
 
 class FakeResponse:
-    def __init__(self, status_code: int = 200, body: bytes = b"", headers: dict | None = None, url: str = ""):
+    def __init__(
+        self, status_code: int = 200, body: bytes = b"", headers: dict | None = None, url: str = ""
+    ):
         self.status_code = status_code
         self.content = body
         self.headers = headers or {}
@@ -74,7 +75,11 @@ def _env(state, name, host, token):
     )
 
 
-@when(parsers.parse('the client sends GET to "{url}" with header "{header}" using environment "{env_name}"'))
+@when(
+    parsers.parse(
+        'the client sends GET to "{url}" with header "{header}" using environment "{env_name}"'
+    )
+)
 def _send_with_env(client, fake_requests, state, url, header, env_name):
     env = Environment.objects.get(name=env_name)
     key, value = header.split("=", 1)
@@ -144,16 +149,32 @@ def _error_code(state, code):
     assert state["response"].json()["error"] == code
 
 
-@given(parsers.parse('a Postman v2.1 payload with collection "{name}" and folder "{folder}" containing requests "{r1}" and "{r2}"'))
+@given(
+    parsers.parse(
+        'a Postman v2.1 payload with collection "{name}" and folder "{folder}" containing requests "{r1}" and "{r2}"'
+    )
+)
 def _payload_collection(state, name, folder, r1, r2):
     state["import_payload"] = {
-        "info": {"name": name, "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+        "info": {
+            "name": name,
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        },
         "item": [
             {
                 "name": folder,
                 "item": [
-                    {"name": r1, "request": {"method": "GET", "url": {"raw": "https://example.test/users"}}},
-                    {"name": r2, "request": {"method": "GET", "url": {"raw": "https://example.test/users/1"}}},
+                    {
+                        "name": r1,
+                        "request": {"method": "GET", "url": {"raw": "https://example.test/users"}},
+                    },
+                    {
+                        "name": r2,
+                        "request": {
+                            "method": "GET",
+                            "url": {"raw": "https://example.test/users/1"},
+                        },
+                    },
                 ],
             }
         ],
@@ -163,7 +184,10 @@ def _payload_collection(state, name, folder, r1, r2):
 @given(parsers.parse('a Postman v2.1 payload with a request whose url is "{url}"'))
 def _payload_url(state, url):
     state["import_payload"] = {
-        "info": {"name": "X", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+        "info": {
+            "name": "X",
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        },
         "item": [{"name": "r", "request": {"method": "GET", "url": {"raw": url}}}],
     }
 
@@ -187,7 +211,9 @@ def _tree_folder(state, client, folder_name, count):
     collection_id = state["response"].json()["id"]
     response = client.get(f"/api/http-client/collections/{collection_id}/tree")
     items = response.json()["items"]
-    folder = next(item for item in items if item["kind"] == "folder" and item["name"] == folder_name)
+    folder = next(
+        item for item in items if item["kind"] == "folder" and item["name"] == folder_name
+    )
     assert len(folder["children"]) == count
 
 

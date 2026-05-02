@@ -33,14 +33,20 @@ def disable_thread_spawn(monkeypatch):
 @given(parsers.parse('a running job exists for "{url}"'))
 def _running_job(state, url):
     state["job"] = YoutubeJob.objects.create(
-        url=url, mode=YoutubeJob.Mode.VIDEO, quality="720p", status=YoutubeJob.Status.RUNNING,
+        url=url,
+        mode=YoutubeJob.Mode.VIDEO,
+        quality="720p",
+        status=YoutubeJob.Status.RUNNING,
     )
 
 
 @given(parsers.parse('a finished job exists for "{url}"'))
 def _finished_job(state, url):
     state["job"] = YoutubeJob.objects.create(
-        url=url, mode=YoutubeJob.Mode.VIDEO, quality="720p", status=YoutubeJob.Status.DONE,
+        url=url,
+        mode=YoutubeJob.Mode.VIDEO,
+        quality="720p",
+        status=YoutubeJob.Status.DONE,
     )
 
 
@@ -53,7 +59,11 @@ def _probe(state, client, url):
     )
 
 
-@when(parsers.parse('the client requests a download for "{url}" with mode "{mode}" and quality "{quality}"'))
+@when(
+    parsers.parse(
+        'the client requests a download for "{url}" with mode "{mode}" and quality "{quality}"'
+    )
+)
 def _download(state, client, url, mode, quality):
     state["response"] = client.post(
         "/api/youtube-downloader/download",

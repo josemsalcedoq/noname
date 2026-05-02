@@ -5,72 +5,134 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Collection',
+            name="Collection",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('description', models.TextField(blank=True, default='')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("description", models.TextField(blank=True, default="")),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['-updated_at'],
+                "ordering": ["-updated_at"],
             },
         ),
         migrations.CreateModel(
-            name='Environment',
+            name="Environment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200, unique=True)),
-                ('variables', models.JSONField(default=list)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=200, unique=True)),
+                ("variables", models.JSONField(default=list)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['name'],
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='Folder',
+            name="Folder",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('position', models.IntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('collection', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='folders', to='http_client.collection')),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='children', to='http_client.folder')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("position", models.IntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "collection",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="folders",
+                        to="http_client.collection",
+                    ),
+                ),
+                (
+                    "parent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="children",
+                        to="http_client.folder",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['position', 'name'],
+                "ordering": ["position", "name"],
             },
         ),
         migrations.CreateModel(
-            name='RequestNode',
+            name="RequestNode",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('method', models.CharField(default='GET', max_length=10)),
-                ('url', models.TextField()),
-                ('headers', models.JSONField(default=list)),
-                ('params', models.JSONField(default=list)),
-                ('body', models.TextField(blank=True, default='')),
-                ('body_type', models.CharField(choices=[('none', 'None'), ('raw', 'Raw'), ('json', 'Json'), ('urlencoded', 'Urlencoded')], default='none', max_length=20)),
-                ('position', models.IntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('collection', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='requests', to='http_client.collection')),
-                ('folder', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='requests', to='http_client.folder')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("method", models.CharField(default="GET", max_length=10)),
+                ("url", models.TextField()),
+                ("headers", models.JSONField(default=list)),
+                ("params", models.JSONField(default=list)),
+                ("body", models.TextField(blank=True, default="")),
+                (
+                    "body_type",
+                    models.CharField(
+                        choices=[
+                            ("none", "None"),
+                            ("raw", "Raw"),
+                            ("json", "Json"),
+                            ("urlencoded", "Urlencoded"),
+                        ],
+                        default="none",
+                        max_length=20,
+                    ),
+                ),
+                ("position", models.IntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "collection",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="requests",
+                        to="http_client.collection",
+                    ),
+                ),
+                (
+                    "folder",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="requests",
+                        to="http_client.folder",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['position', 'name'],
+                "ordering": ["position", "name"],
             },
         ),
     ]

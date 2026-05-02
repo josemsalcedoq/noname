@@ -32,5 +32,7 @@ class TranslateView(APIView):
         else:
             translated = engine.translate(text, source, target)
 
-        response = TranslateResponseSerializer({"text": translated, "detected_source": detected_source})
+        response = TranslateResponseSerializer(
+            {"text": translated, "detected_source": detected_source}
+        )
         return Response(response.data)

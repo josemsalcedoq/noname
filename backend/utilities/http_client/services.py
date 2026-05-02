@@ -154,7 +154,9 @@ def _import_items(
     request_pos = position_offset
     for item in items:
         if "request" in item:
-            url, headers, params, body_text, body_type = _translate_request(item.get("request") or {})
+            url, headers, params, body_text, body_type = _translate_request(
+                item.get("request") or {}
+            )
             RequestNode.objects.create(
                 collection=collection,
                 folder=parent_folder,
@@ -189,7 +191,11 @@ def _translate_request(req: dict[str, Any]) -> tuple[str, list[dict], list[dict]
         url = ""
 
     headers = [
-        {"key": h.get("key", ""), "value": h.get("value", ""), "enabled": not h.get("disabled", False)}
+        {
+            "key": h.get("key", ""),
+            "value": h.get("value", ""),
+            "enabled": not h.get("disabled", False),
+        }
         for h in req.get("header") or []
         if h.get("key")
     ]
@@ -198,7 +204,11 @@ def _translate_request(req: dict[str, Any]) -> tuple[str, list[dict], list[dict]
     if isinstance(url_field, dict):
         for q in url_field.get("query") or []:
             params.append(
-                {"key": q.get("key", ""), "value": q.get("value", ""), "enabled": not q.get("disabled", False)}
+                {
+                    "key": q.get("key", ""),
+                    "value": q.get("value", ""),
+                    "enabled": not q.get("disabled", False),
+                }
             )
 
     body_text = ""
