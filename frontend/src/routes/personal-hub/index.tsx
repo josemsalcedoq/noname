@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { BookmarksTab } from "./-components/bookmarks-tab";
 import { NotesTab } from "./-components/notes-tab";
 import { RemindersPanel } from "./-components/reminders-panel";
 import { TodosTab } from "./-components/todos-tab";
 
-type PersonalTab = "notes" | "todos";
+type PersonalTab = "notes" | "todos" | "bookmarks";
 
 const TABS: { id: PersonalTab; label: string }[] = [
   { id: "notes", label: "Notes" },
   { id: "todos", label: "Todos" },
+  { id: "bookmarks", label: "Bookmarks" },
 ];
 
 export const Route = createFileRoute("/personal-hub/")({
@@ -57,7 +59,7 @@ function PersonalHubPage() {
         ))}
       </nav>
 
-      {tab === "notes" ? <NotesTab /> : <TodosTab />}
+      {tab === "notes" ? <NotesTab /> : tab === "todos" ? <TodosTab /> : <BookmarksTab />}
     </article>
   );
 }

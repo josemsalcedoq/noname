@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import MarkdownIt from "markdown-it";
 
 import {
   useArchiveNote,
@@ -8,6 +9,8 @@ import {
   useUnarchiveNote,
   type Note,
 } from "../api";
+
+const md = new MarkdownIt({ html: false, linkify: true, breaks: true, typographer: true });
 
 export function NotesTab() {
   const [search, setSearch] = useState("");
@@ -141,7 +144,7 @@ function NoteRow({
       {expanded ? (
         <div className="mt-2 space-y-2">
           {note.body ? (
-            <pre className="font-serif text-sm text-fg whitespace-pre-wrap">{note.body}</pre>
+            <NoteBody body={note.body} />
           ) : null}
           {note.tags.length ? (
             <div className="flex flex-wrap gap-1">
@@ -177,6 +180,16 @@ function NoteRow({
 
 function firstLine(text: string): string {
   return text.split("\n")[0] ?? "";
+}
+
+function NoteBody({ body }: { body: string }) {
+  const html = useMemo(() => md.render(body), [body]);
+  return (
+    <div
+      className="markdown-preview text-fg"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 function parseTags(input: string): string[] {

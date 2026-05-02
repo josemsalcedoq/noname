@@ -6,8 +6,8 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Note, Todo
-from .serializers import NoteSerializer, SnoozeSerializer, TodoSerializer
+from .models import Bookmark, Note, Todo
+from .serializers import BookmarkSerializer, NoteSerializer, SnoozeSerializer, TodoSerializer
 
 
 class NoteViewSet(viewsets.ModelViewSet):
@@ -115,3 +115,40 @@ class DueRemindersView(viewsets.ViewSet):
         return Response(
             {"reminders": TodoSerializer(refreshed, many=True).data}, status=status.HTTP_200_OK
         )
+
+
+class BookmarkViewSet(viewsets.ModelViewSet):
+    serializer_class = BookmarkSerializer
+
+    def get_queryset(self):
+        queryset = Bookmark.objects.all()
+        if self.action != "list":
+            return queryset
+        archived = self.request.query_params.get("archived")
+        if archived == "true":
+            queryset = queryset.filter(archived_at__isnull=False)
+        elif archived != "all":
+            queryset = queryset.filter(archived_at__isnull=True)
+        search = self.request.query_params.get("q")
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | Q(url__icontains=search) | Q(notes__icontains=search)
+            )
+        tag = self.request.query_params.get("tag")
+        if tag:
+            queryset = queryset.filter(tags__contains=[tag])
+        return queryset
+
+    @action(detail=True, methods=["post"])
+    def archive(self, request, pk=None):
+        bookmark = self.get_object()
+        bookmark.archived_at = timezone.now()
+        bookmark.save(update_fields=["archived_at", "updated_at"])
+        return Response(BookmarkSerializer(bookmark).data)
+
+    @action(detail=True, methods=["post"])
+    def unarchive(self, request, pk=None):
+        bookmark = self.get_object()
+        bookmark.archived_at = None
+        bookmark.save(update_fields=["archived_at", "updated_at"])
+        return Response(BookmarkSerializer(bookmark).data)

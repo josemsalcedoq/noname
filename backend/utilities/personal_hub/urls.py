@@ -1,11 +1,12 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import DueRemindersView, NoteViewSet, TodoViewSet
+from .views import BookmarkViewSet, DueRemindersView, NoteViewSet, TodoViewSet
 
 router = DefaultRouter(trailing_slash=False)
 router.register("notes", NoteViewSet, basename="note")
 router.register("todos", TodoViewSet, basename="todo")
+router.register("bookmarks", BookmarkViewSet, basename="bookmark")
 router.register("due", DueRemindersView, basename="due")
 
 urlpatterns = [

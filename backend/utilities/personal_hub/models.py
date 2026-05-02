@@ -14,6 +14,19 @@ class Note(models.Model):
         ordering = ["-updated_at"]
 
 
+class Bookmark(models.Model):
+    url = models.URLField(max_length=2000)
+    title = models.CharField(max_length=300, blank=True, default="")
+    notes = models.TextField(blank=True, default="")
+    tags = ArrayField(models.CharField(max_length=50), default=list, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
 class Todo(models.Model):
     title = models.CharField(max_length=200)
     body = models.TextField(blank=True, default="")

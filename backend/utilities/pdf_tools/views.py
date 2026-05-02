@@ -100,6 +100,66 @@ class ExtractTextView(APIView):
         return Response(result)
 
 
+class ThumbnailsView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        upload = request.FILES.get("file")
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            result = services.thumbnails(io.BytesIO(upload.read()))
+        except Exception as exc:  # noqa: BLE001
+            return _error(status.HTTP_400_BAD_REQUEST, "render_failed", str(exc))
+        return Response(result)
+
+
+class ManipulateView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        import json as json_lib
+
+        upload = request.FILES.get("file")
+        operations_raw = request.data.get("operations", "[]")
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            operations = json_lib.loads(operations_raw)
+            if not isinstance(operations, list):
+                raise ValueError("operations must be a list")
+        except (json_lib.JSONDecodeError, ValueError) as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "invalid_operations", str(exc))
+        try:
+            result = services.manipulate_pages(io.BytesIO(upload.read()), operations)
+        except services.PdfError as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "invalid_operations", str(exc))
+        stem = Path(upload.name).stem
+        response = HttpResponse(result, content_type=PDF_MIME)
+        response["Content-Disposition"] = f'attachment; filename="{stem}_edited.pdf"'
+        return response
+
+
 class OcrView(APIView):
     parser_classes = [MultiPartParser]
 

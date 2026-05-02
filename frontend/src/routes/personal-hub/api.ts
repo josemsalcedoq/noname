@@ -160,6 +160,54 @@ export function useDeleteTodo() {
   });
 }
 
+export interface Bookmark {
+  id: number;
+  url: string;
+  title: string;
+  notes: string;
+  tags: string[];
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const BOOKMARKS_URL = "/api/personal-hub/bookmarks";
+
+export function useBookmarks(params: { search?: string; archived?: boolean }) {
+  const qs = new URLSearchParams();
+  if (params.search) qs.set("q", params.search);
+  if (params.archived) qs.set("archived", "true");
+  return useQuery({
+    queryKey: ["bookmarks", params.search ?? "", params.archived ? "archived" : "active"],
+    queryFn: () => getJson<Bookmark[]>(`${BOOKMARKS_URL}?${qs.toString()}`),
+  });
+}
+
+export function useCreateBookmark() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { url: string; title?: string; notes?: string; tags?: string[] }) =>
+      postJson<typeof input, Bookmark>(BOOKMARKS_URL, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bookmarks"] }),
+  });
+}
+
+export function useArchiveBookmark() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => postAction<Bookmark>(`${BOOKMARKS_URL}/${id}/archive`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bookmarks"] }),
+  });
+}
+
+export function useDeleteBookmark() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteResource(`${BOOKMARKS_URL}/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bookmarks"] }),
+  });
+}
+
 const DUE_URL = "/api/personal-hub/due";
 
 export function useDueReminders(withinSeconds = 300) {

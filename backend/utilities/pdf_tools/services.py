@@ -71,6 +71,58 @@ def extract_text(stream: io.BytesIO) -> dict:
     }
 
 
+def thumbnails(stream: io.BytesIO, *, max_width: int = 220) -> dict:
+    """Render every page as a small JPEG and return them base64-encoded."""
+    import base64
+
+    import pypdfium2 as pdfium
+
+    stream.seek(0)
+    document = pdfium.PdfDocument(stream)
+    images: list[str] = []
+    try:
+        for index in range(len(document)):
+            page = document[index]
+            scale = max_width / page.get_width()
+            pil = page.render(scale=scale).to_pil()
+            buffer = io.BytesIO()
+            pil.save(buffer, format="JPEG", quality=70, optimize=True)
+            images.append("data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode())
+    finally:
+        document.close()
+    return {"page_count": len(images), "thumbnails": images}
+
+
+def manipulate_pages(stream: io.BytesIO, operations: list[dict]) -> bytes:
+    """Reorder / rotate / drop pages.
+
+    operations is a list of {"source": <1-indexed page>, "rotation": 0|90|180|270}
+    in the desired output order. Pages omitted from the list are dropped.
+    """
+    if not operations:
+        raise PdfError("at least one page must be kept")
+    stream.seek(0)
+    with pikepdf.open(stream) as source:
+        total = len(source.pages)
+        output = pikepdf.Pdf.new()
+        try:
+            for op in operations:
+                src_index = int(op.get("source", 0))
+                if src_index < 1 or src_index > total:
+                    raise PdfError(f"page {src_index} out of bounds (document has {total} pages)")
+                rotation = int(op.get("rotation", 0))
+                if rotation not in (0, 90, 180, 270):
+                    raise PdfError(f"invalid rotation {rotation}; must be 0/90/180/270")
+                output.pages.append(source.pages[src_index - 1])
+                if rotation:
+                    output.pages[-1].rotate(rotation, relative=True)
+            buffer = io.BytesIO()
+            output.save(buffer)
+            return buffer.getvalue()
+        finally:
+            output.close()
+
+
 def ocr_pdf(stream: io.BytesIO, *, languages: str = "eng+spa", dpi: int = 200) -> dict:
     """Run Tesseract OCR on every page rendered as an image.
 

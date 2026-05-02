@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Note, Todo
+from .models import Bookmark, Note, Todo
 
 MAX_NOTE_BODY = 50_000
 MAX_TAGS = 10
@@ -58,3 +58,15 @@ class TodoSerializer(serializers.ModelSerializer):
 
 class SnoozeSerializer(serializers.Serializer):
     minutes = serializers.IntegerField(min_value=1, max_value=24 * 60)
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bookmark
+        fields = ("id", "url", "title", "notes", "tags", "archived_at", "created_at", "updated_at")
+        read_only_fields = ("id", "created_at", "updated_at")
+
+    def validate_tags(self, value: list[str]) -> list[str]:
+        if len(value) > MAX_TAGS:
+            raise serializers.ValidationError(f"At most {MAX_TAGS} tags allowed.")
+        return value

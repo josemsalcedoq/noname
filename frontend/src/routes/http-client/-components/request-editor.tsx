@@ -46,7 +46,7 @@ export function RequestEditor({
   isDirty: boolean;
   canSave: boolean;
 }) {
-  const [tab, setTab] = useState<"params" | "headers" | "body">("params");
+  const [tab, setTab] = useState<"params" | "headers" | "auth" | "body">("params");
   const [curlOpen, setCurlOpen] = useState(false);
   const [curlInput, setCurlInput] = useState("");
   const [curlError, setCurlError] = useState<string | null>(null);
@@ -177,7 +177,7 @@ export function RequestEditor({
       </div>
 
       <nav className="flex gap-1 border-b border-border" aria-label="request tabs">
-        {(["params", "headers", "body"] as const).map((id) => (
+        {(["params", "headers", "auth", "body"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -199,6 +199,8 @@ export function RequestEditor({
         <KeyValueEditor rows={value.params} onChange={(next) => update("params", next)} testidPrefix="params" />
       ) : tab === "headers" ? (
         <KeyValueEditor rows={value.headers} onChange={(next) => update("headers", next)} testidPrefix="headers" />
+      ) : tab === "auth" ? (
+        <AuthEditor headers={value.headers} onChange={(next) => update("headers", next)} />
       ) : (
         <div className="space-y-2">
           <select
@@ -225,5 +227,130 @@ export function RequestEditor({
         </div>
       )}
     </section>
+  );
+}
+
+type AuthMode = "none" | "basic" | "bearer";
+
+function detectAuthMode(headers: KeyValue[]): { mode: AuthMode; user?: string; password?: string; token?: string } {
+  const auth = headers.find((h) => h.key.toLowerCase() === "authorization" && h.enabled !== false);
+  if (!auth) return { mode: "none" };
+  const value = auth.value.trim();
+  if (value.toLowerCase().startsWith("basic ")) {
+    try {
+      const decoded = atob(value.slice(6).trim());
+      const [user, password = ""] = decoded.split(":", 2);
+      return { mode: "basic", user, password };
+    } catch {
+      return { mode: "basic" };
+    }
+  }
+  if (value.toLowerCase().startsWith("bearer ")) {
+    return { mode: "bearer", token: value.slice(7).trim() };
+  }
+  return { mode: "none" };
+}
+
+function withoutAuth(headers: KeyValue[]): KeyValue[] {
+  return headers.filter((h) => h.key.toLowerCase() !== "authorization");
+}
+
+function AuthEditor({
+  headers,
+  onChange,
+}: {
+  headers: KeyValue[];
+  onChange: (next: KeyValue[]) => void;
+}) {
+  const detected = detectAuthMode(headers);
+  const [mode, setMode] = useState<AuthMode>(detected.mode);
+  const [user, setUser] = useState(detected.user ?? "");
+  const [password, setPassword] = useState(detected.password ?? "");
+  const [token, setToken] = useState(detected.token ?? "");
+
+  const apply = (nextMode: AuthMode, nextUser: string, nextPassword: string, nextToken: string) => {
+    const cleaned = withoutAuth(headers);
+    if (nextMode === "none") {
+      onChange(cleaned);
+      return;
+    }
+    if (nextMode === "basic") {
+      const value = `Basic ${btoa(`${nextUser}:${nextPassword}`)}`;
+      onChange([...cleaned, { key: "Authorization", value, enabled: true }]);
+      return;
+    }
+    if (nextMode === "bearer") {
+      onChange([...cleaned, { key: "Authorization", value: `Bearer ${nextToken}`, enabled: true }]);
+    }
+  };
+
+  const onModeChange = (next: AuthMode) => {
+    setMode(next);
+    apply(next, user, password, token);
+  };
+
+  return (
+    <div className="space-y-3">
+      <label className="block max-w-xs">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">Auth scheme</span>
+        <select
+          value={mode}
+          onChange={(e) => onModeChange(e.target.value as AuthMode)}
+          className="mt-2 w-full bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+          data-testid="auth-mode"
+        >
+          <option value="none">none</option>
+          <option value="basic">Basic</option>
+          <option value="bearer">Bearer token</option>
+        </select>
+      </label>
+
+      {mode === "basic" ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input
+            value={user}
+            onChange={(e) => {
+              setUser(e.target.value);
+              apply("basic", e.target.value, password, token);
+            }}
+            placeholder="username"
+            className="bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+            data-testid="auth-basic-user"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              apply("basic", user, e.target.value, token);
+            }}
+            placeholder="password"
+            className="bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+            data-testid="auth-basic-password"
+          />
+        </div>
+      ) : null}
+
+      {mode === "bearer" ? (
+        <textarea
+          value={token}
+          onChange={(e) => {
+            setToken(e.target.value);
+            apply("bearer", user, password, e.target.value);
+          }}
+          placeholder="paste a bearer token (without the 'Bearer ' prefix)"
+          spellCheck={false}
+          rows={3}
+          className="w-full bg-bg border border-border text-fg font-mono text-xs px-3 py-2 rounded-sm focus:border-accent focus:outline-none break-all"
+          data-testid="auth-bearer-token"
+        />
+      ) : null}
+
+      {mode !== "none" ? (
+        <p className="font-mono text-[10px] text-subtle">
+          credentials are written into the <span className="text-fg">Authorization</span> header — visible in the Headers tab and in copy-as-cURL output.
+        </p>
+      ) : null}
+    </div>
   );
 }

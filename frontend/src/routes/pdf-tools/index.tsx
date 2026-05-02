@@ -1,20 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   downloadBlob,
   useExtractText,
+  useManipulate,
   useMergePdfs,
   useOcrPdf,
   useSplitPdf,
+  useThumbnails,
   type ExtractTextResult,
+  type PageOperation,
 } from "./api";
 
-type PdfTab = "merge" | "split" | "extract" | "ocr";
+type PdfTab = "merge" | "split" | "pages" | "extract" | "ocr";
 
 const TABS: { id: PdfTab; label: string }[] = [
   { id: "merge", label: "Merge" },
   { id: "split", label: "Split" },
+  { id: "pages", label: "Pages" },
   { id: "extract", label: "Extract text" },
   { id: "ocr", label: "OCR" },
 ];
@@ -66,6 +70,7 @@ function PdfToolsPage() {
       <section className="pt-2">
         {tab === "merge" ? <MergeTab /> : null}
         {tab === "split" ? <SplitTab /> : null}
+        {tab === "pages" ? <PagesTab /> : null}
         {tab === "extract" ? <ExtractTab /> : null}
         {tab === "ocr" ? <OcrTab /> : null}
       </section>
@@ -289,4 +294,175 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} kB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+interface PageState {
+  source: number;
+  rotation: 0 | 90 | 180 | 270;
+  thumbnail: string;
+  id: string;
+}
+
+function PagesTab() {
+  const [file, setFile] = useState<File | null>(null);
+  const [pages, setPages] = useState<PageState[]>([]);
+  const thumbnails = useThumbnails();
+  const manipulate = useManipulate();
+
+  useEffect(() => {
+    if (!file) return;
+    setPages([]);
+    thumbnails.mutate(file, {
+      onSuccess: (data) => {
+        setPages(
+          data.thumbnails.map((thumb, index) => ({
+            source: index + 1,
+            rotation: 0 as const,
+            thumbnail: thumb,
+            id: `p${index + 1}-${Math.random().toString(36).slice(2, 8)}`,
+          })),
+        );
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file]);
+
+  const move = (index: number, delta: number) => {
+    setPages((prev) => {
+      const next = [...prev];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const rotate = (index: number, delta: 90 | -90) => {
+    setPages((prev) =>
+      prev.map((p, i) =>
+        i === index
+          ? { ...p, rotation: ((((p.rotation + delta) % 360) + 360) % 360) as PageState["rotation"] }
+          : p,
+      ),
+    );
+  };
+
+  const remove = (index: number) =>
+    setPages((prev) => prev.filter((_, i) => i !== index));
+
+  const apply = async () => {
+    if (!file || !pages.length) return;
+    const operations: PageOperation[] = pages.map((p) => ({ source: p.source, rotation: p.rotation }));
+    const result = await manipulate.mutateAsync({ file, operations });
+    downloadBlob(result.blob, result.filename);
+  };
+
+  return (
+    <div className="space-y-4">
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="block w-full font-mono text-xs file:mr-3 file:px-3 file:py-1.5 file:bg-accent file:text-bg file:border-0 file:rounded-sm file:font-mono file:text-xs file:cursor-pointer text-muted"
+        data-testid="pages-input"
+      />
+
+      {thumbnails.isPending ? (
+        <p className="font-mono text-xs text-subtle">rendering thumbnails…</p>
+      ) : null}
+      {thumbnails.isError ? (
+        <p className="font-mono text-xs text-error" role="alert">
+          {(thumbnails.error as Error).message}
+        </p>
+      ) : null}
+
+      {pages.length ? (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {pages.map((page, index) => (
+              <div
+                key={page.id}
+                className="border border-border rounded-sm bg-surface/30 p-2 space-y-2"
+                data-testid={`page-card-${index}`}
+              >
+                <div className="bg-bg flex items-center justify-center min-h-[10rem] overflow-hidden">
+                  <img
+                    src={page.thumbnail}
+                    alt={`page ${page.source}`}
+                    style={{ transform: `rotate(${page.rotation}deg)` }}
+                    className="max-w-full max-h-[14rem] transition-transform"
+                  />
+                </div>
+                <div className="flex items-center justify-between font-mono text-[10px] text-subtle">
+                  <span>
+                    pos {index + 1} · src {page.source}
+                  </span>
+                  {page.rotation ? <span className="text-accent">{page.rotation}°</span> : null}
+                </div>
+                <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => move(index, -1)}
+                    disabled={index === 0}
+                    className="px-1.5 py-1 border border-border hover:border-accent rounded-sm disabled:opacity-30"
+                  >
+                    ↑ up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(index, 1)}
+                    disabled={index === pages.length - 1}
+                    className="px-1.5 py-1 border border-border hover:border-accent rounded-sm disabled:opacity-30"
+                  >
+                    ↓ down
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => rotate(index, -90)}
+                    className="px-1.5 py-1 border border-border hover:border-accent rounded-sm"
+                  >
+                    ↺ rot
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => rotate(index, 90)}
+                    className="px-1.5 py-1 border border-border hover:border-accent rounded-sm"
+                  >
+                    ↻ rot
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(index)}
+                    className="col-span-2 px-1.5 py-1 border border-error text-error hover:bg-error/10 rounded-sm"
+                  >
+                    × delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={apply}
+              disabled={!pages.length || manipulate.isPending}
+              className="px-4 py-2 bg-accent text-bg font-mono text-sm rounded-sm hover:opacity-90 disabled:opacity-40"
+              data-testid="pages-apply"
+            >
+              {manipulate.isPending ? "applying…" : "apply & download"}
+            </button>
+            <span className="font-mono text-[11px] text-subtle">
+              {pages.length} page{pages.length === 1 ? "" : "s"} in output
+            </span>
+            {manipulate.isError ? (
+              <span className="font-mono text-[11px] text-error" role="alert">
+                {(manipulate.error as Error).message}
+              </span>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
 }

@@ -69,6 +69,37 @@ export function useExtractText() {
   });
 }
 
+export interface ThumbnailsResult {
+  page_count: number;
+  thumbnails: string[];
+}
+
+export interface PageOperation {
+  source: number;
+  rotation: 0 | 90 | 180 | 270;
+}
+
+export function useThumbnails() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const body = new FormData();
+      body.append("file", file);
+      return postMultipart<ThumbnailsResult>("/api/pdf-tools/thumbnails", body);
+    },
+  });
+}
+
+export function useManipulate() {
+  return useMutation({
+    mutationFn: async (input: { file: File; operations: PageOperation[] }) => {
+      const body = new FormData();
+      body.append("file", input.file);
+      body.append("operations", JSON.stringify(input.operations));
+      return postMultipartBlob("/api/pdf-tools/manipulate", body);
+    },
+  });
+}
+
 export function useOcrPdf() {
   return useMutation({
     mutationFn: async (input: { file: File; languages: string }) => {
