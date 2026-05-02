@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "utilities.docx_translator",
     "utilities.youtube_downloader",
     "utilities.personal_hub",
+    "utilities.skills_catalog",
 ]
 
 MIDDLEWARE = [
@@ -103,6 +104,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MODELS_DIR = Path(os.environ.get("MODELS_DIR", BASE_DIR / "models"))
 TMP_DIR = Path(os.environ.get("TMP_DIR", BASE_DIR / "tmp"))
 DOWNLOAD_DIR = Path(os.environ.get("DOWNLOAD_DIR", BASE_DIR / "downloads"))
+SKILLS_DIR = Path(os.environ.get("SKILLS_DIR", Path.home() / ".claude" / "skills"))
 
 for _dir in (MODELS_DIR, TMP_DIR, DOWNLOAD_DIR):
     _dir.mkdir(parents=True, exist_ok=True)

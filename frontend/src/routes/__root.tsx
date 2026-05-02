@@ -46,6 +46,8 @@ function Sidebar() {
         <SidebarItem to="/dev-tools" label="Dev tools" />
         <SidebarHeader>Personal</SidebarHeader>
         <SidebarItem to="/personal-hub" label="Notes & todos" />
+        <SidebarHeader>Claude</SidebarHeader>
+        <SidebarItem to="/skills" label="Skills catalog" />
       </nav>
       <div className="px-6 py-4 border-t border-border font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
         local · single-user

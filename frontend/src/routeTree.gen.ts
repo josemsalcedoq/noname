@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as YoutubeDownloaderIndexRouteImport } from './routes/youtube-downloader/index'
 import { Route as TextTranslatorIndexRouteImport } from './routes/text-translator/index'
+import { Route as SkillsIndexRouteImport } from './routes/skills/index'
 import { Route as PersonalHubIndexRouteImport } from './routes/personal-hub/index'
 import { Route as DocxTranslatorIndexRouteImport } from './routes/docx-translator/index'
 import { Route as DevToolsIndexRouteImport } from './routes/dev-tools/index'
@@ -29,6 +30,11 @@ const YoutubeDownloaderIndexRoute = YoutubeDownloaderIndexRouteImport.update({
 const TextTranslatorIndexRoute = TextTranslatorIndexRouteImport.update({
   id: '/text-translator/',
   path: '/text-translator/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkillsIndexRoute = SkillsIndexRouteImport.update({
+  id: '/skills/',
+  path: '/skills/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PersonalHubIndexRoute = PersonalHubIndexRouteImport.update({
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/personal-hub/': typeof PersonalHubIndexRoute
+  '/skills/': typeof SkillsIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
   '/youtube-downloader/': typeof YoutubeDownloaderIndexRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/dev-tools': typeof DevToolsIndexRoute
   '/docx-translator': typeof DocxTranslatorIndexRoute
   '/personal-hub': typeof PersonalHubIndexRoute
+  '/skills': typeof SkillsIndexRoute
   '/text-translator': typeof TextTranslatorIndexRoute
   '/youtube-downloader': typeof YoutubeDownloaderIndexRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/personal-hub/': typeof PersonalHubIndexRoute
+  '/skills/': typeof SkillsIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
   '/youtube-downloader/': typeof YoutubeDownloaderIndexRoute
 }
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/dev-tools/'
     | '/docx-translator/'
     | '/personal-hub/'
+    | '/skills/'
     | '/text-translator/'
     | '/youtube-downloader/'
   fileRoutesByTo: FileRoutesByTo
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/dev-tools'
     | '/docx-translator'
     | '/personal-hub'
+    | '/skills'
     | '/text-translator'
     | '/youtube-downloader'
   id:
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/dev-tools/'
     | '/docx-translator/'
     | '/personal-hub/'
+    | '/skills/'
     | '/text-translator/'
     | '/youtube-downloader/'
   fileRoutesById: FileRoutesById
@@ -104,6 +116,7 @@ export interface RootRouteChildren {
   DevToolsIndexRoute: typeof DevToolsIndexRoute
   DocxTranslatorIndexRoute: typeof DocxTranslatorIndexRoute
   PersonalHubIndexRoute: typeof PersonalHubIndexRoute
+  SkillsIndexRoute: typeof SkillsIndexRoute
   TextTranslatorIndexRoute: typeof TextTranslatorIndexRoute
   YoutubeDownloaderIndexRoute: typeof YoutubeDownloaderIndexRoute
 }
@@ -129,6 +142,13 @@ declare module '@tanstack/react-router' {
       path: '/text-translator'
       fullPath: '/text-translator/'
       preLoaderRoute: typeof TextTranslatorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/skills/': {
+      id: '/skills/'
+      path: '/skills'
+      fullPath: '/skills/'
+      preLoaderRoute: typeof SkillsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/personal-hub/': {
@@ -160,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   DevToolsIndexRoute: DevToolsIndexRoute,
   DocxTranslatorIndexRoute: DocxTranslatorIndexRoute,
   PersonalHubIndexRoute: PersonalHubIndexRoute,
+  SkillsIndexRoute: SkillsIndexRoute,
   TextTranslatorIndexRoute: TextTranslatorIndexRoute,
   YoutubeDownloaderIndexRoute: YoutubeDownloaderIndexRoute,
 }
