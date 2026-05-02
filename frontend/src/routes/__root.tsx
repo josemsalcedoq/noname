@@ -44,6 +44,7 @@ function Sidebar() {
         <SidebarItem to="/youtube-downloader" label="YouTube downloader" />
         <SidebarHeader>Developer</SidebarHeader>
         <SidebarItem to="/dev-tools" label="Dev tools" />
+        <SidebarItem to="/http-client" label="HTTP client" />
         <SidebarHeader>Personal</SidebarHeader>
         <SidebarItem to="/personal-hub" label="Notes & todos" />
         <SidebarHeader>Claude</SidebarHeader>

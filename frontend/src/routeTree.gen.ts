@@ -14,6 +14,7 @@ import { Route as YoutubeDownloaderIndexRouteImport } from './routes/youtube-dow
 import { Route as TextTranslatorIndexRouteImport } from './routes/text-translator/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills/index'
 import { Route as PersonalHubIndexRouteImport } from './routes/personal-hub/index'
+import { Route as HttpClientIndexRouteImport } from './routes/http-client/index'
 import { Route as DocxTranslatorIndexRouteImport } from './routes/docx-translator/index'
 import { Route as DevToolsIndexRouteImport } from './routes/dev-tools/index'
 
@@ -42,6 +43,11 @@ const PersonalHubIndexRoute = PersonalHubIndexRouteImport.update({
   path: '/personal-hub/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HttpClientIndexRoute = HttpClientIndexRouteImport.update({
+  id: '/http-client/',
+  path: '/http-client/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocxTranslatorIndexRoute = DocxTranslatorIndexRouteImport.update({
   id: '/docx-translator/',
   path: '/docx-translator/',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
+  '/http-client/': typeof HttpClientIndexRoute
   '/personal-hub/': typeof PersonalHubIndexRoute
   '/skills/': typeof SkillsIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dev-tools': typeof DevToolsIndexRoute
   '/docx-translator': typeof DocxTranslatorIndexRoute
+  '/http-client': typeof HttpClientIndexRoute
   '/personal-hub': typeof PersonalHubIndexRoute
   '/skills': typeof SkillsIndexRoute
   '/text-translator': typeof TextTranslatorIndexRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
+  '/http-client/': typeof HttpClientIndexRoute
   '/personal-hub/': typeof PersonalHubIndexRoute
   '/skills/': typeof SkillsIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dev-tools/'
     | '/docx-translator/'
+    | '/http-client/'
     | '/personal-hub/'
     | '/skills/'
     | '/text-translator/'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dev-tools'
     | '/docx-translator'
+    | '/http-client'
     | '/personal-hub'
     | '/skills'
     | '/text-translator'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dev-tools/'
     | '/docx-translator/'
+    | '/http-client/'
     | '/personal-hub/'
     | '/skills/'
     | '/text-translator/'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DevToolsIndexRoute: typeof DevToolsIndexRoute
   DocxTranslatorIndexRoute: typeof DocxTranslatorIndexRoute
+  HttpClientIndexRoute: typeof HttpClientIndexRoute
   PersonalHubIndexRoute: typeof PersonalHubIndexRoute
   SkillsIndexRoute: typeof SkillsIndexRoute
   TextTranslatorIndexRoute: typeof TextTranslatorIndexRoute
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PersonalHubIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/http-client/': {
+      id: '/http-client/'
+      path: '/http-client'
+      fullPath: '/http-client/'
+      preLoaderRoute: typeof HttpClientIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/docx-translator/': {
       id: '/docx-translator/'
       path: '/docx-translator'
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DevToolsIndexRoute: DevToolsIndexRoute,
   DocxTranslatorIndexRoute: DocxTranslatorIndexRoute,
+  HttpClientIndexRoute: HttpClientIndexRoute,
   PersonalHubIndexRoute: PersonalHubIndexRoute,
   SkillsIndexRoute: SkillsIndexRoute,
   TextTranslatorIndexRoute: TextTranslatorIndexRoute,
