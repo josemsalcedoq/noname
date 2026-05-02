@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   downloadBlob,
+  useDiscoverFields,
   useExtractText,
+  useFillForm,
   useMakeSearchable,
   useManipulate,
   useMergePdfs,
@@ -11,16 +13,18 @@ import {
   useSplitPdf,
   useThumbnails,
   type ExtractTextResult,
+  type FormField,
   type PageOperation,
 } from "./api";
 
-type PdfTab = "merge" | "split" | "pages" | "view" | "extract" | "ocr" | "searchable";
+type PdfTab = "merge" | "split" | "pages" | "view" | "extract" | "ocr" | "searchable" | "form";
 
 const TABS: { id: PdfTab; label: string }[] = [
   { id: "view", label: "View" },
   { id: "merge", label: "Merge" },
   { id: "split", label: "Split" },
   { id: "pages", label: "Pages" },
+  { id: "form", label: "Form fill" },
   { id: "extract", label: "Extract text" },
   { id: "ocr", label: "OCR" },
   { id: "searchable", label: "Searchable" },
@@ -75,6 +79,7 @@ function PdfToolsPage() {
         {tab === "merge" ? <MergeTab /> : null}
         {tab === "split" ? <SplitTab /> : null}
         {tab === "pages" ? <PagesTab /> : null}
+        {tab === "form" ? <FormTab /> : null}
         {tab === "extract" ? <ExtractTab /> : null}
         {tab === "ocr" ? <OcrTab /> : null}
         {tab === "searchable" ? <SearchableTab /> : null}
@@ -675,6 +680,96 @@ function ViewTab() {
           <div className="bg-fg/5 border border-border rounded-sm p-3 overflow-auto max-h-[70vh]">
             <canvas ref={canvasRef} className="mx-auto bg-white" />
           </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function FormTab() {
+  const [file, setFile] = useState<File | null>(null);
+  const [fields, setFields] = useState<FormField[]>([]);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const discover = useDiscoverFields();
+  const fill = useFillForm();
+
+  useEffect(() => {
+    if (!file) return;
+    setFields([]);
+    setValues({});
+    discover.mutate(file, {
+      onSuccess: (data) => {
+        setFields(data.fields);
+        setValues(Object.fromEntries(data.fields.map((f) => [f.name, f.value])));
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file]);
+
+  const onSubmit = async () => {
+    if (!file) return;
+    const result = await fill.mutateAsync({ file, values });
+    downloadBlob(result.blob, result.filename);
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="font-serif italic text-muted text-sm max-w-prose">
+        Fills AcroForm text/checkbox fields. XFA forms (Adobe-only) are not supported.
+      </p>
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="block w-full font-mono text-xs file:mr-3 file:px-3 file:py-1.5 file:bg-accent file:text-bg file:border-0 file:rounded-sm file:font-mono file:text-xs file:cursor-pointer text-muted"
+        data-testid="form-input"
+      />
+      {discover.isPending ? (
+        <p className="font-mono text-xs text-subtle">discovering fields…</p>
+      ) : null}
+      {discover.isError ? (
+        <p className="font-mono text-xs text-error" role="alert">
+          {(discover.error as Error).message}
+        </p>
+      ) : null}
+      {fields.length === 0 && file && discover.isSuccess ? (
+        <p className="font-mono text-xs text-subtle">no AcroForm fields found</p>
+      ) : null}
+      {fields.length ? (
+        <>
+          <ul className="space-y-2">
+            {fields.map((field) => (
+              <li key={field.name} className="border border-border rounded-sm p-3 bg-surface/30">
+                <label className="block">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-subtle">
+                    {field.name} <span className="text-accent">· {field.kind}</span>
+                  </span>
+                  <input
+                    value={values[field.name] ?? ""}
+                    onChange={(e) =>
+                      setValues((prev) => ({ ...prev, [field.name]: e.target.value }))
+                    }
+                    className="mt-2 w-full bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+                    data-testid={`form-field-${field.name}`}
+                  />
+                </label>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={fill.isPending}
+            className="px-4 py-2 bg-accent text-bg font-mono text-sm rounded-sm hover:opacity-90 disabled:opacity-40"
+            data-testid="form-fill-button"
+          >
+            {fill.isPending ? "filling…" : "fill & download"}
+          </button>
+          {fill.isError ? (
+            <p className="font-mono text-xs text-error" role="alert">
+              {(fill.error as Error).message}
+            </p>
+          ) : null}
         </>
       ) : null}
     </div>

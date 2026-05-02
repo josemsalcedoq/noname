@@ -18,7 +18,9 @@ A local HTTP client like Postman / Insomnia: organize saved requests in collecti
 | 2.3   | Request history (auto-recorded `RequestRun`, replay by clicking)                      | done   |
 | 2.4   | Auth tabs (Basic, Bearer) that auto-inject the `Authorization` header                 | done   |
 | 2.5   | Tree reorder via up/down arrow buttons (true drag-drop deferred — needs @dnd-kit + recursive tree DnD state) | done |
-| 3     | Pre-request and test scripts (sandboxed JS), GraphQL/WebSocket support                | future |
+| 3.1   | Pre-request scripts via `new Function()` runner with `noname` helper API               | done   |
+| 3.2   | WebSocket — separate `/websocket` page, native browser API                              | done   |
+| 3.3   | Test scripts (post-response assertions) — sandboxed JS                                  | future |
 | n/a   | GraphQL queries — already supported via "raw" body type with JSON `{ query, variables }`. No dedicated UI yet. | done (implicit) |
 
 Phase 1 details below; Phase 2.1–2.3 details inline under "Tech notes" → "Phase 2 additions".

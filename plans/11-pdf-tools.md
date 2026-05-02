@@ -20,7 +20,9 @@ Local-only PDF operations behind a tabbed page: merge multiple PDFs into one, sp
 | 3     | In-browser viewer (PDF.js) — view-only with zoom + paging     | done   |
 | 3.1   | Annotations (highlight, free-text, drawing) — canvas overlay  | future |
 | 4     | Searchable PDF output (text layer via `ocrmypdf`)             | done   |
-| 5+    | Text-content editing, form fill, signatures                   | future |
+| 5     | AcroForm fill (discover field names + write back values)      | done   |
+| 5.1   | XFA forms (Adobe-only — out of scope, document)               | future |
+| 6     | Text-content editing, cryptographic signatures                | future |
 
 ## Inputs / Outputs
 

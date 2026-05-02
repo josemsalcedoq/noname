@@ -25,7 +25,46 @@ const EMPTY_WORKING: WorkingRequest = {
   params: [],
   body: "",
   body_type: "none",
+  pre_request_script: "",
 };
+
+interface ScriptContextEnv {
+  vars: Record<string, string>;
+}
+
+function runPreRequestScript(working: WorkingRequest, env: ScriptContextEnv): WorkingRequest {
+  if (!working.pre_request_script.trim()) return working;
+  const next: WorkingRequest = {
+    ...working,
+    headers: [...working.headers],
+    params: [...working.params],
+  };
+  const noname = {
+    setHeader(key: string, value: string) {
+      const cleaned = next.headers.filter((h) => h.key.toLowerCase() !== key.toLowerCase());
+      cleaned.push({ key, value, enabled: true });
+      next.headers = cleaned;
+    },
+    setVar(key: string, value: string) {
+      env.vars[key] = value;
+    },
+    getVar(key: string): string | undefined {
+      return env.vars[key];
+    },
+    setBody(text: string) {
+      next.body = text;
+    },
+    setBodyType(type: WorkingRequest["body_type"]) {
+      next.body_type = type;
+    },
+    now() {
+      return new Date();
+    },
+  };
+  const fn = new Function("noname", "console", working.pre_request_script);
+  fn(noname, console);
+  return next;
+}
 
 function HttpClientPage() {
   const [collectionId, setCollectionId] = useState<number | null>(null);
@@ -61,12 +100,20 @@ function HttpClientPage() {
     return JSON.stringify(saved) !== JSON.stringify(working);
   }, [requestQuery.data, working]);
 
-  const onSend = () =>
+  const onSend = () => {
+    let prepared: WorkingRequest;
+    try {
+      prepared = runPreRequestScript(working, { vars: {} });
+    } catch (err) {
+      console.error("pre-request script failed:", err);
+      prepared = working;
+    }
     send.mutate({
-      ...working,
+      ...prepared,
       environment_id: environmentId,
       request_node_id: requestId,
     });
+  };
 
   const onSave = () => {
     if (requestId === null) return;

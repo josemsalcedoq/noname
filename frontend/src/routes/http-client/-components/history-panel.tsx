@@ -70,6 +70,7 @@ export function workingFromRun(run: RunDetail): WorkingRequest {
     params: run.snapshot.params,
     body: run.snapshot.body,
     body_type: run.snapshot.body_type,
+    pre_request_script: "",
   };
 }
 

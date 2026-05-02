@@ -160,6 +160,66 @@ class ManipulateView(APIView):
         return response
 
 
+class FormFieldsView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        upload = request.FILES.get("file")
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            result = services.discover_form_fields(io.BytesIO(upload.read()))
+        except services.PdfError as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "invalid_pdf", str(exc))
+        return Response(result)
+
+
+class FormFillView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        import json as json_lib
+
+        upload = request.FILES.get("file")
+        values_raw = request.data.get("values", "{}")
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            values = json_lib.loads(values_raw)
+            if not isinstance(values, dict):
+                raise ValueError("values must be an object")
+        except (json_lib.JSONDecodeError, ValueError) as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "invalid_values", str(exc))
+        try:
+            result = services.fill_form_fields(io.BytesIO(upload.read()), values)
+        except services.PdfError as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "fill_failed", str(exc))
+        stem = Path(upload.name).stem
+        response = HttpResponse(result, content_type=PDF_MIME)
+        response["Content-Disposition"] = f'attachment; filename="{stem}_filled.pdf"'
+        return response
+
+
 class SearchableView(APIView):
     parser_classes = [MultiPartParser]
 

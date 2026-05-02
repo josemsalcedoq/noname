@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as YoutubeDownloaderIndexRouteImport } from './routes/youtube-downloader/index'
+import { Route as WebsocketIndexRouteImport } from './routes/websocket/index'
 import { Route as TextTranslatorIndexRouteImport } from './routes/text-translator/index'
 import { Route as SrtTranslatorIndexRouteImport } from './routes/srt-translator/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills/index'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const YoutubeDownloaderIndexRoute = YoutubeDownloaderIndexRouteImport.update({
   id: '/youtube-downloader/',
   path: '/youtube-downloader/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WebsocketIndexRoute = WebsocketIndexRouteImport.update({
+  id: '/websocket/',
+  path: '/websocket/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TextTranslatorIndexRoute = TextTranslatorIndexRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/skills/': typeof SkillsIndexRoute
   '/srt-translator/': typeof SrtTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
+  '/websocket/': typeof WebsocketIndexRoute
   '/youtube-downloader/': typeof YoutubeDownloaderIndexRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/skills': typeof SkillsIndexRoute
   '/srt-translator': typeof SrtTranslatorIndexRoute
   '/text-translator': typeof TextTranslatorIndexRoute
+  '/websocket': typeof WebsocketIndexRoute
   '/youtube-downloader': typeof YoutubeDownloaderIndexRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/skills/': typeof SkillsIndexRoute
   '/srt-translator/': typeof SrtTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
+  '/websocket/': typeof WebsocketIndexRoute
   '/youtube-downloader/': typeof YoutubeDownloaderIndexRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/skills/'
     | '/srt-translator/'
     | '/text-translator/'
+    | '/websocket/'
     | '/youtube-downloader/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/skills'
     | '/srt-translator'
     | '/text-translator'
+    | '/websocket'
     | '/youtube-downloader'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/skills/'
     | '/srt-translator/'
     | '/text-translator/'
+    | '/websocket/'
     | '/youtube-downloader/'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   SkillsIndexRoute: typeof SkillsIndexRoute
   SrtTranslatorIndexRoute: typeof SrtTranslatorIndexRoute
   TextTranslatorIndexRoute: typeof TextTranslatorIndexRoute
+  WebsocketIndexRoute: typeof WebsocketIndexRoute
   YoutubeDownloaderIndexRoute: typeof YoutubeDownloaderIndexRoute
 }
 
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/youtube-downloader'
       fullPath: '/youtube-downloader/'
       preLoaderRoute: typeof YoutubeDownloaderIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/websocket/': {
+      id: '/websocket/'
+      path: '/websocket'
+      fullPath: '/websocket/'
+      preLoaderRoute: typeof WebsocketIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/text-translator/': {
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   SkillsIndexRoute: SkillsIndexRoute,
   SrtTranslatorIndexRoute: SrtTranslatorIndexRoute,
   TextTranslatorIndexRoute: TextTranslatorIndexRoute,
+  WebsocketIndexRoute: WebsocketIndexRoute,
   YoutubeDownloaderIndexRoute: YoutubeDownloaderIndexRoute,
 }
 export const routeTree = rootRouteImport

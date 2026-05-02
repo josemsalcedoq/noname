@@ -38,6 +38,7 @@ export interface RequestNode {
   params: KeyValue[];
   body: string;
   body_type: BodyType;
+  pre_request_script: string;
   position: number;
   created_at: string;
   updated_at: string;

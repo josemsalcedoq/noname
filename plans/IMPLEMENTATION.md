@@ -337,3 +337,15 @@ Honest still-future (each its own focused turn or weeks of work):
 - HTTP client Phase 3 — sandboxed JS pre-request scripts (security model required), WebSocket bidirectional transport (entirely new mode).
 - PDF Phase 3.1 — annotations canvas (highlight, free-text, drawing) with persistence.
 - PDF Phase 5+ — text-content editing inside pages, form-field filling, signatures.
+
+## Phase 20 — Autonomous "do everything" pass (done)
+Stages shipped without per-feature confirmation, scoping by what realistically fits:
+
+- **HTTP client Phase 3.1 — pre-request scripts.** New `pre_request_script` text field on `RequestNode` (migration 0003). Frontend "Script" tab in the request editor. On Send: `new Function("noname", "console", script)(noname, console)` runs first, mutating a working-copy of headers/body before the request goes out. `noname` API: `setHeader / setVar / getVar / setBody / setBodyType / now()`. Documented honestly in the UI: this is single-user local — `Function` is not a real sandbox. Don't paste scripts you didn't write.
+- **HTTP client Phase 3.2 — WebSocket.** Separate `/websocket` route (sidebar entry under Developer). Pure browser `WebSocket` API: connect / disconnect / send (Cmd+Enter) / message log with direction arrows + timestamps. No backend involvement; CORS isn't a thing for WS so it works against any reachable WS server.
+- **PDF Phase 5 — AcroForm fill.** Two new endpoints: `POST /pdf-tools/form/fields` introspects AcroForm field names + types (text/checkbox/choice/signature) + current values; `POST /pdf-tools/form/fill` writes a `{name: value}` map and returns the modified PDF (`/NeedAppearances = true` so readers re-render the field appearance). Frontend "Form fill" tab discovers fields, renders an input per field, fills + downloads. XFA forms unsupported (Adobe-only format) — documented.
+
+Honest still-future:
+- HTTP client Phase 3.3 — post-response test scripts (asserts) — small extension but skipped to keep this pass focused.
+- PDF Phase 3.1 — annotations canvas (highlight, free-text, drawing) — would need a dedicated turn for the canvas state machine + persistence model.
+- PDF Phase 6 — text-content editing + cryptographic signatures — months / weeks of work each. Acrobat-equivalent territory.

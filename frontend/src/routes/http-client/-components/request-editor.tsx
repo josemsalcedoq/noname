@@ -14,6 +14,7 @@ export interface WorkingRequest {
   params: KeyValue[];
   body: string;
   body_type: BodyType;
+  pre_request_script: string;
 }
 
 export function workingFromRequest(r: RequestNode): WorkingRequest {
@@ -24,6 +25,7 @@ export function workingFromRequest(r: RequestNode): WorkingRequest {
     params: r.params ?? [],
     body: r.body ?? "",
     body_type: r.body_type ?? "none",
+    pre_request_script: r.pre_request_script ?? "",
   };
 }
 
@@ -46,7 +48,7 @@ export function RequestEditor({
   isDirty: boolean;
   canSave: boolean;
 }) {
-  const [tab, setTab] = useState<"params" | "headers" | "auth" | "body">("params");
+  const [tab, setTab] = useState<"params" | "headers" | "auth" | "body" | "script">("params");
   const [curlOpen, setCurlOpen] = useState(false);
   const [curlInput, setCurlInput] = useState("");
   const [curlError, setCurlError] = useState<string | null>(null);
@@ -64,10 +66,10 @@ export function RequestEditor({
     try {
       const parsed = parseCurl(curlInput);
       onChange({
+        ...value,
         method: parsed.method,
         url: parsed.url,
         headers: parsed.headers,
-        params: value.params,
         body: parsed.body,
         body_type: parsed.body_type,
       });
@@ -177,7 +179,7 @@ export function RequestEditor({
       </div>
 
       <nav className="flex gap-1 border-b border-border" aria-label="request tabs">
-        {(["params", "headers", "auth", "body"] as const).map((id) => (
+        {(["params", "headers", "auth", "body", "script"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -201,6 +203,11 @@ export function RequestEditor({
         <KeyValueEditor rows={value.headers} onChange={(next) => update("headers", next)} testidPrefix="headers" />
       ) : tab === "auth" ? (
         <AuthEditor headers={value.headers} onChange={(next) => update("headers", next)} />
+      ) : tab === "script" ? (
+        <ScriptEditor
+          value={value.pre_request_script}
+          onChange={(next) => update("pre_request_script", next)}
+        />
       ) : (
         <div className="space-y-2">
           <select
@@ -351,6 +358,46 @@ function AuthEditor({
           credentials are written into the <span className="text-fg">Authorization</span> header — visible in the Headers tab and in copy-as-cURL output.
         </p>
       ) : null}
+    </div>
+  );
+}
+
+const SCRIPT_PLACEHOLDER = `// Pre-request script. Runs before each Send.
+// Available helpers via the 'noname' object:
+//   noname.setHeader(key, value)
+//   noname.setVar(key, value)        // session env var (resolved at send time)
+//   noname.getVar(key)
+//   noname.setBody(text)
+//   noname.setBodyType("json" | "raw" | "urlencoded" | "none")
+//   noname.now()                     // current Date
+
+// Example:
+// noname.setHeader("X-Request-Id", crypto.randomUUID());
+// noname.setVar("nonce", String(Date.now()));`;
+
+function ScriptEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="font-mono text-[10px] text-subtle">
+        Pre-request script. Single-user local — runs in the browser via{" "}
+        <code className="text-fg">new Function()</code>, NOT a security sandbox. Don&apos;t paste
+        scripts you didn&apos;t write yourself.
+      </p>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        spellCheck={false}
+        placeholder={SCRIPT_PLACEHOLDER}
+        rows={14}
+        className="w-full bg-bg border border-border text-fg font-mono text-xs px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+        data-testid="script-editor"
+      />
     </div>
   );
 }

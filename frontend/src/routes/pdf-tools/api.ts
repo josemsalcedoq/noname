@@ -99,6 +99,33 @@ export function useManipulate() {
   });
 }
 
+export interface FormField {
+  name: string;
+  kind: string;
+  value: string;
+}
+
+export function useDiscoverFields() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const body = new FormData();
+      body.append("file", file);
+      return postMultipart<{ fields: FormField[] }>("/api/pdf-tools/form/fields", body);
+    },
+  });
+}
+
+export function useFillForm() {
+  return useMutation({
+    mutationFn: async (input: { file: File; values: Record<string, string> }) => {
+      const body = new FormData();
+      body.append("file", input.file);
+      body.append("values", JSON.stringify(input.values));
+      return postMultipartBlob("/api/pdf-tools/form/fill", body);
+    },
+  });
+}
+
 export function useMakeSearchable() {
   return useMutation({
     mutationFn: async (input: { file: File; languages: string }) => {

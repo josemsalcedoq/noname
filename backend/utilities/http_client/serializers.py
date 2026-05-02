@@ -17,6 +17,7 @@ class RequestSerializer(serializers.ModelSerializer):
             "params",
             "body",
             "body_type",
+            "pre_request_script",
             "position",
             "created_at",
             "updated_at",

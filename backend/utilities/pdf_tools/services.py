@@ -129,6 +129,73 @@ def manipulate_pages(stream: io.BytesIO, operations: list[dict]) -> bytes:
             output.close()
 
 
+def discover_form_fields(stream: io.BytesIO) -> dict:
+    """Inspect AcroForm fields and return their names + types + current values."""
+    stream.seek(0)
+    fields: list[dict] = []
+    with pikepdf.open(stream) as pdf:
+        root = pdf.Root.get("/AcroForm")
+        if root is None or "/Fields" not in root:
+            return {"fields": []}
+        seen: set[str] = set()
+        for field in _walk_fields(root["/Fields"]):
+            name = field.get("/T")
+            if not name:
+                continue
+            name_str = str(name)
+            if name_str in seen:
+                continue
+            seen.add(name_str)
+            ft = field.get("/FT")
+            ft_str = str(ft) if ft else ""
+            kind = {
+                "/Tx": "text",
+                "/Btn": "checkbox",
+                "/Ch": "choice",
+                "/Sig": "signature",
+            }.get(ft_str, ft_str or "unknown")
+            value = field.get("/V")
+            fields.append(
+                {
+                    "name": name_str,
+                    "kind": kind,
+                    "value": str(value) if value is not None else "",
+                }
+            )
+    return {"fields": fields}
+
+
+def _walk_fields(fields):
+    for field in fields:
+        yield field
+        kids = field.get("/Kids")
+        if kids is not None:
+            yield from _walk_fields(kids)
+
+
+def fill_form_fields(stream: io.BytesIO, values: dict[str, str]) -> bytes:
+    """Write values into AcroForm fields by name. Returns the new PDF bytes."""
+    stream.seek(0)
+    with pikepdf.open(stream) as pdf:
+        root = pdf.Root.get("/AcroForm")
+        if root is None or "/Fields" not in root:
+            raise PdfError("PDF has no AcroForm fields")
+        for field in _walk_fields(root["/Fields"]):
+            name = field.get("/T")
+            if not name:
+                continue
+            name_str = str(name)
+            if name_str not in values:
+                continue
+            field["/V"] = pikepdf.String(str(values[name_str]))
+            if "/AP" in field:
+                del field["/AP"]
+        root["/NeedAppearances"] = True
+        buffer = io.BytesIO()
+        pdf.save(buffer)
+        return buffer.getvalue()
+
+
 def make_searchable(stream: io.BytesIO, *, languages: str = "eng+spa") -> bytes:
     """Run ocrmypdf to add a text layer to a scanned PDF and return the new PDF bytes.
 
