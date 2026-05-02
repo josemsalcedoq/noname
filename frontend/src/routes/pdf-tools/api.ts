@@ -126,6 +126,25 @@ export function useFillForm() {
   });
 }
 
+export interface PdfAnnotation {
+  page: number;
+  x: number;
+  y: number;
+  text: string;
+  color?: "yellow" | "red" | "blue";
+}
+
+export function useAnnotate() {
+  return useMutation({
+    mutationFn: async (input: { file: File; annotations: PdfAnnotation[] }) => {
+      const body = new FormData();
+      body.append("file", input.file);
+      body.append("annotations", JSON.stringify(input.annotations));
+      return postMultipartBlob("/api/pdf-tools/annotate", body);
+    },
+  });
+}
+
 export function useMakeSearchable() {
   return useMutation({
     mutationFn: async (input: { file: File; languages: string }) => {

@@ -43,6 +43,7 @@ class RequestNode(models.Model):
     body = models.TextField(blank=True, default="")
     body_type = models.CharField(max_length=20, choices=BodyType.choices, default=BodyType.NONE)
     pre_request_script = models.TextField(blank=True, default="")
+    test_script = models.TextField(blank=True, default="")
     position = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

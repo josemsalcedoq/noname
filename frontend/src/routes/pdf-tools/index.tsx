@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   downloadBlob,
+  useAnnotate,
   useDiscoverFields,
   useExtractText,
   useFillForm,
@@ -15,12 +16,23 @@ import {
   type ExtractTextResult,
   type FormField,
   type PageOperation,
+  type PdfAnnotation,
 } from "./api";
 
-type PdfTab = "merge" | "split" | "pages" | "view" | "extract" | "ocr" | "searchable" | "form";
+type PdfTab =
+  | "merge"
+  | "split"
+  | "pages"
+  | "view"
+  | "annotate"
+  | "extract"
+  | "ocr"
+  | "searchable"
+  | "form";
 
 const TABS: { id: PdfTab; label: string }[] = [
   { id: "view", label: "View" },
+  { id: "annotate", label: "Annotate" },
   { id: "merge", label: "Merge" },
   { id: "split", label: "Split" },
   { id: "pages", label: "Pages" },
@@ -76,6 +88,7 @@ function PdfToolsPage() {
 
       <section className="pt-2">
         {tab === "view" ? <ViewTab /> : null}
+        {tab === "annotate" ? <AnnotateTab /> : null}
         {tab === "merge" ? <MergeTab /> : null}
         {tab === "split" ? <SplitTab /> : null}
         {tab === "pages" ? <PagesTab /> : null}
@@ -768,6 +781,253 @@ function FormTab() {
           {fill.isError ? (
             <p className="font-mono text-xs text-error" role="alert">
               {(fill.error as Error).message}
+            </p>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+interface AnnotationDraft extends PdfAnnotation {
+  id: string;
+}
+
+function AnnotateTab() {
+  const [file, setFile] = useState<File | null>(null);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [annotations, setAnnotations] = useState<AnnotationDraft[]>([]);
+  const [pdfHeight, setPdfHeight] = useState(0);
+  const [draftText, setDraftText] = useState("");
+  const [pendingPos, setPendingPos] = useState<{ x: number; y: number } | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pdfRef = useRef<unknown>(null);
+  const annotate = useAnnotate();
+
+  useEffect(() => {
+    if (!file) return;
+    setAnnotations([]);
+    setCurrentPage(1);
+    let cancelled = false;
+    (async () => {
+      const pdfjs = await import("pdfjs-dist");
+      pdfjs.GlobalWorkerOptions.workerSrc = (
+        await import("pdfjs-dist/build/pdf.worker.mjs?url")
+      ).default;
+      const buffer = await file.arrayBuffer();
+      const document = await pdfjs.getDocument({ data: buffer }).promise;
+      if (cancelled) return;
+      pdfRef.current = document;
+      setPageCount(document.numPages);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [file]);
+
+  useEffect(() => {
+    const document = pdfRef.current as
+      | {
+          getPage: (n: number) => Promise<{
+            getViewport: (o: { scale: number }) => { width: number; height: number };
+            render: (o: { canvasContext: CanvasRenderingContext2D; viewport: unknown }) => { promise: Promise<void> };
+          }>;
+        }
+      | null;
+    if (!document || !canvasRef.current || pageCount === 0) return;
+    let cancelled = false;
+    (async () => {
+      const page = await document.getPage(currentPage);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = canvasRef.current!;
+      const context = canvas.getContext("2d");
+      if (!context || cancelled) return;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      setPdfHeight(viewport.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, pageCount]);
+
+  const onCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPendingPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setDraftText("");
+  };
+
+  const commitAnnotation = () => {
+    if (!pendingPos || !draftText.trim()) return;
+    // Convert canvas coords (top-left origin) to PDF coords (bottom-left origin)
+    const pdfX = pendingPos.x / 1.5;
+    const pdfY = (pdfHeight - pendingPos.y) / 1.5;
+    setAnnotations((prev) => [
+      ...prev,
+      {
+        id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        page: currentPage,
+        x: pdfX,
+        y: pdfY,
+        text: draftText.trim(),
+        color: "yellow",
+      },
+    ]);
+    setPendingPos(null);
+    setDraftText("");
+  };
+
+  const removeAnn = (id: string) =>
+    setAnnotations((prev) => prev.filter((a) => a.id !== id));
+
+  const onApply = async () => {
+    if (!file || annotations.length === 0) return;
+    const result = await annotate.mutateAsync({
+      file,
+      annotations: annotations.map(({ page, x, y, text, color }) => ({ page, x, y, text, color })),
+    });
+    downloadBlob(result.blob, result.filename);
+  };
+
+  const annotationsOnThisPage = annotations.filter((a) => a.page === currentPage);
+
+  return (
+    <div className="space-y-4">
+      <p className="font-serif italic text-muted text-sm max-w-prose">
+        Click anywhere on a page to add a sticky-note annotation. Annotations
+        persist as PDF text annotations (visible in any reader). Highlights /
+        drawings / freeform text overlays are <em>not</em> in scope here.
+      </p>
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="block w-full font-mono text-xs file:mr-3 file:px-3 file:py-1.5 file:bg-accent file:text-bg file:border-0 file:rounded-sm file:font-mono file:text-xs file:cursor-pointer text-muted"
+        data-testid="annotate-input"
+      />
+      {pageCount > 0 ? (
+        <>
+          <div className="flex items-center gap-3 font-mono text-xs">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border border-border hover:border-accent rounded-sm disabled:opacity-30"
+            >
+              ← prev
+            </button>
+            <span className="text-subtle">page</span>
+            <span className="text-fg">{currentPage}</span>
+            <span className="text-subtle">of {pageCount}</span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
+              disabled={currentPage === pageCount}
+              className="px-3 py-1 border border-border hover:border-accent rounded-sm disabled:opacity-30"
+            >
+              next →
+            </button>
+            <span className="ml-auto text-subtle">
+              {annotations.length} note{annotations.length === 1 ? "" : "s"} total
+            </span>
+          </div>
+          <div className="bg-fg/5 border border-border rounded-sm p-3 overflow-auto max-h-[70vh] relative">
+            <div className="relative inline-block mx-auto">
+              <canvas
+                ref={canvasRef}
+                onClick={onCanvasClick}
+                className="bg-white cursor-crosshair"
+                data-testid="annotate-canvas"
+              />
+              {annotationsOnThisPage.map((ann) => {
+                const screenX = ann.x * 1.5;
+                const screenY = pdfHeight - ann.y * 1.5;
+                return (
+                  <div
+                    key={ann.id}
+                    style={{ left: screenX - 8, top: screenY - 8 }}
+                    className="absolute w-4 h-4 bg-accent border-2 border-bg rounded-full pointer-events-none"
+                    title={ann.text}
+                  />
+                );
+              })}
+              {pendingPos ? (
+                <div
+                  style={{ left: pendingPos.x - 8, top: pendingPos.y - 8 }}
+                  className="absolute w-4 h-4 bg-error border-2 border-bg rounded-full animate-pulse pointer-events-none"
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {pendingPos ? (
+            <div className="flex items-center gap-2">
+              <input
+                value={draftText}
+                onChange={(e) => setDraftText(e.target.value)}
+                placeholder="note text…"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitAnnotation();
+                  if (e.key === "Escape") setPendingPos(null);
+                }}
+                className="flex-1 bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+                data-testid="annotate-draft-text"
+              />
+              <button
+                type="button"
+                onClick={commitAnnotation}
+                disabled={!draftText.trim()}
+                className="px-3 py-2 bg-accent text-bg font-mono text-xs rounded-sm hover:opacity-90 disabled:opacity-40"
+                data-testid="annotate-add"
+              >
+                add
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingPos(null)}
+                className="px-3 py-2 border border-border font-mono text-xs rounded-sm"
+              >
+                cancel
+              </button>
+            </div>
+          ) : null}
+
+          {annotations.length > 0 ? (
+            <ul className="space-y-1 font-mono text-xs">
+              {annotations.map((ann) => (
+                <li
+                  key={ann.id}
+                  className="flex items-center gap-2 border border-border rounded-sm px-2 py-1"
+                >
+                  <span className="text-subtle w-12">p{ann.page}</span>
+                  <span className="text-fg flex-1 truncate">{ann.text}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeAnn(ann.id)}
+                    className="text-subtle hover:text-error"
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onApply}
+            disabled={!annotations.length || annotate.isPending}
+            className="px-4 py-2 bg-accent text-bg font-mono text-sm rounded-sm hover:opacity-90 disabled:opacity-40"
+            data-testid="annotate-apply"
+          >
+            {annotate.isPending ? "saving…" : "apply & download"}
+          </button>
+          {annotate.isError ? (
+            <p className="font-mono text-xs text-error" role="alert">
+              {(annotate.error as Error).message}
             </p>
           ) : null}
         </>

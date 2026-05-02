@@ -8,6 +8,7 @@ import {
   useSend,
   useUpdateRequest,
   type RunSummary,
+  type SendResponse,
 } from "./api";
 import { HistoryPanel, workingFromRun } from "./-components/history-panel";
 import { RequestEditor, workingFromRequest, type WorkingRequest } from "./-components/request-editor";
@@ -26,7 +27,66 @@ const EMPTY_WORKING: WorkingRequest = {
   body: "",
   body_type: "none",
   pre_request_script: "",
+  test_script: "",
 };
+
+export interface TestResult {
+  pass: boolean;
+  label: string;
+  detail?: string;
+}
+
+export function runTestScript(script: string, response: SendResponse | undefined): TestResult[] {
+  if (!script.trim() || !response) return [];
+  const results: TestResult[] = [];
+  const noname = {
+    responseStatus: response.status,
+    responseHeaders: response.headers,
+    responseBody: response.body,
+    responseJson() {
+      return JSON.parse(response.body);
+    },
+    expect(condition: unknown, label: string) {
+      results.push({ pass: !!condition, label });
+    },
+    expectStatus(code: number) {
+      results.push({
+        pass: response.status === code,
+        label: `status === ${code}`,
+        detail: `got ${response.status}`,
+      });
+    },
+    expectStatusRange(min: number, max: number) {
+      results.push({
+        pass: response.status >= min && response.status <= max,
+        label: `status in [${min}, ${max}]`,
+        detail: `got ${response.status}`,
+      });
+    },
+    expectHeader(name: string, value: string) {
+      const found = Object.entries(response.headers).find(([k]) => k.toLowerCase() === name.toLowerCase());
+      const actual = found?.[1];
+      results.push({
+        pass: actual === value,
+        label: `header ${name} === "${value}"`,
+        detail: actual ? `got "${actual}"` : "missing",
+      });
+    },
+    expectBodyContains(text: string) {
+      results.push({
+        pass: response.body.includes(text),
+        label: `body contains "${text}"`,
+      });
+    },
+  };
+  try {
+    const fn = new Function("noname", "console", script);
+    fn(noname, console);
+  } catch (err) {
+    results.push({ pass: false, label: "script error", detail: (err as Error).message });
+  }
+  return results;
+}
 
 interface ScriptContextEnv {
   vars: Record<string, string>;
@@ -188,6 +248,7 @@ function HttpClientPage() {
             result={send.data}
             error={(send.error as Error | null) ?? null}
             isPending={send.isPending}
+            testResults={runTestScript(working.test_script, send.data)}
           />
         </div>
 

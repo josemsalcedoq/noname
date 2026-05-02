@@ -18,6 +18,7 @@ class RequestSerializer(serializers.ModelSerializer):
             "body",
             "body_type",
             "pre_request_script",
+            "test_script",
             "position",
             "created_at",
             "updated_at",

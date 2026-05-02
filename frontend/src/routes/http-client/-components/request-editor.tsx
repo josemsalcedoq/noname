@@ -15,6 +15,7 @@ export interface WorkingRequest {
   body: string;
   body_type: BodyType;
   pre_request_script: string;
+  test_script: string;
 }
 
 export function workingFromRequest(r: RequestNode): WorkingRequest {
@@ -26,6 +27,7 @@ export function workingFromRequest(r: RequestNode): WorkingRequest {
     body: r.body ?? "",
     body_type: r.body_type ?? "none",
     pre_request_script: r.pre_request_script ?? "",
+    test_script: r.test_script ?? "",
   };
 }
 
@@ -48,7 +50,7 @@ export function RequestEditor({
   isDirty: boolean;
   canSave: boolean;
 }) {
-  const [tab, setTab] = useState<"params" | "headers" | "auth" | "body" | "script">("params");
+  const [tab, setTab] = useState<"params" | "headers" | "auth" | "body" | "script" | "tests">("params");
   const [curlOpen, setCurlOpen] = useState(false);
   const [curlInput, setCurlInput] = useState("");
   const [curlError, setCurlError] = useState<string | null>(null);
@@ -179,7 +181,7 @@ export function RequestEditor({
       </div>
 
       <nav className="flex gap-1 border-b border-border" aria-label="request tabs">
-        {(["params", "headers", "auth", "body", "script"] as const).map((id) => (
+        {(["params", "headers", "auth", "body", "script", "tests"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -207,6 +209,11 @@ export function RequestEditor({
         <ScriptEditor
           value={value.pre_request_script}
           onChange={(next) => update("pre_request_script", next)}
+        />
+      ) : tab === "tests" ? (
+        <TestScriptEditor
+          value={value.test_script}
+          onChange={(next) => update("test_script", next)}
         />
       ) : (
         <div className="space-y-2">
@@ -397,6 +404,49 @@ function ScriptEditor({
         rows={14}
         className="w-full bg-bg border border-border text-fg font-mono text-xs px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
         data-testid="script-editor"
+      />
+    </div>
+  );
+}
+
+const TEST_PLACEHOLDER = `// Test script. Runs after each Send.
+// Available helpers via the 'noname' object:
+//   noname.expect(condition, label)
+//   noname.expectStatus(code)
+//   noname.expectStatusRange(min, max)
+//   noname.expectHeader(name, value)
+//   noname.expectBodyContains(text)
+//   noname.responseStatus     // number
+//   noname.responseHeaders    // Record<string, string>
+//   noname.responseBody       // string
+//   noname.responseJson()     // throws if not JSON
+
+// Example:
+// noname.expectStatus(200);
+// const data = noname.responseJson();
+// noname.expect(Array.isArray(data.items), "items is an array");`;
+
+function TestScriptEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="font-mono text-[10px] text-subtle">
+        Test script. Runs after each response. Results show under the response
+        viewer. Same security caveat as pre-request scripts.
+      </p>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        spellCheck={false}
+        placeholder={TEST_PLACEHOLDER}
+        rows={14}
+        className="w-full bg-bg border border-border text-fg font-mono text-xs px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+        data-testid="test-script-editor"
       />
     </div>
   );

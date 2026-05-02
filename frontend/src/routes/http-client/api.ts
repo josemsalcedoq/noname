@@ -39,6 +39,7 @@ export interface RequestNode {
   body: string;
   body_type: BodyType;
   pre_request_script: string;
+  test_script: string;
   position: number;
   created_at: string;
   updated_at: string;

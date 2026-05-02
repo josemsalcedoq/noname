@@ -196,6 +196,52 @@ def fill_form_fields(stream: io.BytesIO, values: dict[str, str]) -> bytes:
         return buffer.getvalue()
 
 
+def annotate_pdf(stream: io.BytesIO, annotations: list[dict]) -> bytes:
+    """Add sticky-note text annotations to a PDF.
+
+    Each annotation: {page: 1-indexed, x, y, text, color?: "yellow"|"red"|"blue"}.
+    Coordinates are in PDF points from the bottom-left of the page.
+    """
+    if not annotations:
+        raise PdfError("at least one annotation is required")
+    color_map = {
+        "yellow": [1, 0.95, 0.4],
+        "red": [1, 0.5, 0.5],
+        "blue": [0.5, 0.7, 1.0],
+    }
+    stream.seek(0)
+    with pikepdf.open(stream) as pdf:
+        total = len(pdf.pages)
+        for ann in annotations:
+            page_idx = int(ann.get("page", 0))
+            if page_idx < 1 or page_idx > total:
+                raise PdfError(f"page {page_idx} out of bounds (document has {total} pages)")
+            x = float(ann.get("x", 36))
+            y = float(ann.get("y", 36))
+            text = str(ann.get("text", "")).strip()
+            if not text:
+                continue
+            color = color_map.get(str(ann.get("color", "yellow")).lower(), color_map["yellow"])
+            page = pdf.pages[page_idx - 1]
+            note = pikepdf.Dictionary(
+                Type=pikepdf.Name("/Annot"),
+                Subtype=pikepdf.Name("/Text"),
+                Rect=[x, y, x + 24, y + 24],
+                Contents=pikepdf.String(text),
+                Open=False,
+                Name=pikepdf.Name("/Comment"),
+                C=color,
+            )
+            existing = page.get("/Annots")
+            if existing is None:
+                page["/Annots"] = pikepdf.Array([note])
+            else:
+                existing.append(note)
+        buffer = io.BytesIO()
+        pdf.save(buffer)
+        return buffer.getvalue()
+
+
 def make_searchable(stream: io.BytesIO, *, languages: str = "eng+spa") -> bytes:
     """Run ocrmypdf to add a text layer to a scanned PDF and return the new PDF bytes.
 

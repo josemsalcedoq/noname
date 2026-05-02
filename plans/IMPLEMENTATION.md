@@ -349,3 +349,12 @@ Honest still-future:
 - HTTP client Phase 3.3 — post-response test scripts (asserts) — small extension but skipped to keep this pass focused.
 - PDF Phase 3.1 — annotations canvas (highlight, free-text, drawing) — would need a dedicated turn for the canvas state machine + persistence model.
 - PDF Phase 6 — text-content editing + cryptographic signatures — months / weeks of work each. Acrobat-equivalent territory.
+
+## Phase 21 — Autonomous "dale" pass (done)
+- **HTTP client Phase 3.3 — post-response test scripts.** New `test_script` text field on `RequestNode` (migration 0004). `Tests` tab in the request editor mirrors the script editor. On every Send, the script runs after the response lands via `new Function("noname", "console", script)`. `noname` API: `expect / expectStatus / expectStatusRange / expectHeader / expectBodyContains` plus `responseStatus / responseHeaders / responseBody / responseJson()`. Response viewer adds a `tests` tab with a `passed/total` counter and ✓/✗ per assertion (red on failure, green on pass, error swallowed into a single failed assertion).
+- **PDF Phase 3.1 — sticky-note annotations.** New `POST /pdf-tools/annotate` (multipart) takes the file plus a JSON `annotations` array (`page`, `x`, `y`, `text`, optional `color`). `services.annotate_pdf` writes pikepdf `/Text` annotation dictionaries onto each page's `/Annots` (Subtype `/Text`, `Rect = [x, y, x+24, y+24]`, color from a yellow/red/blue palette). Frontend "Annotate" tab: PDF.js renders the current page on a canvas, click captures coords (canvas top-left → PDF bottom-left conversion using viewport height), text input commits the note, accumulated notes show in a list with delete buttons, "apply & download" calls the endpoint and triggers a download. Highlights / drawings / free-form text overlays remain out of scope — sticky notes only.
+
+Honest still-future:
+- PDF Phase 3.1+ — highlight rectangles (subtype `/Highlight` with `QuadPoints`), ink/freehand annotations, free-text overlays. Each one is its own canvas state machine.
+- PDF Phase 6 — text-content editing + cryptographic signatures — unchanged: Acrobat-equivalent territory.
+- HTTP client — proper JS sandbox (vm2-style) for both pre-request and test scripts, if this ever leaves single-user local.

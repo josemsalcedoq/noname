@@ -220,6 +220,42 @@ class FormFillView(APIView):
         return response
 
 
+class AnnotateView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        import json as json_lib
+
+        upload = request.FILES.get("file")
+        annotations_raw = request.data.get("annotations", "[]")
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            annotations = json_lib.loads(annotations_raw)
+            if not isinstance(annotations, list):
+                raise ValueError("annotations must be a list")
+        except (json_lib.JSONDecodeError, ValueError) as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "invalid_annotations", str(exc))
+        try:
+            result = services.annotate_pdf(io.BytesIO(upload.read()), annotations)
+        except services.PdfError as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "annotate_failed", str(exc))
+        stem = Path(upload.name).stem
+        response = HttpResponse(result, content_type=PDF_MIME)
+        response["Content-Disposition"] = f'attachment; filename="{stem}_annotated.pdf"'
+        return response
+
+
 class SearchableView(APIView):
     parser_classes = [MultiPartParser]
 

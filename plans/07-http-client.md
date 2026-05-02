@@ -20,7 +20,7 @@ A local HTTP client like Postman / Insomnia: organize saved requests in collecti
 | 2.5   | Tree reorder via up/down arrow buttons (true drag-drop deferred — needs @dnd-kit + recursive tree DnD state) | done |
 | 3.1   | Pre-request scripts via `new Function()` runner with `noname` helper API               | done   |
 | 3.2   | WebSocket — separate `/websocket` page, native browser API                              | done   |
-| 3.3   | Test scripts (post-response assertions) — sandboxed JS                                  | future |
+| 3.3   | Test scripts (post-response assertions) via `new Function()` runner with `noname.expect*` API | done   |
 | n/a   | GraphQL queries — already supported via "raw" body type with JSON `{ query, variables }`. No dedicated UI yet. | done (implicit) |
 
 Phase 1 details below; Phase 2.1–2.3 details inline under "Tech notes" → "Phase 2 additions".

@@ -2,16 +2,24 @@ import { useMemo, useState } from "react";
 
 import type { SendResponse } from "../api";
 
+export interface TestResult {
+  pass: boolean;
+  label: string;
+  detail?: string;
+}
+
 export function ResponseViewer({
   result,
   error,
   isPending,
+  testResults = [],
 }: {
   result: SendResponse | undefined;
   error: Error | null;
   isPending: boolean;
+  testResults?: TestResult[];
 }) {
-  const [tab, setTab] = useState<"body" | "headers">("body");
+  const [tab, setTab] = useState<"body" | "headers" | "tests">("body");
 
   const rawBody = result?.body ?? "";
   const prettyBody = useMemo(() => {
@@ -80,7 +88,7 @@ export function ResponseViewer({
       ) : null}
 
       <nav className="flex gap-1 border-b border-border">
-        {(["body", "headers"] as const).map((id) => (
+        {(["body", "headers", "tests"] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -93,6 +101,7 @@ export function ResponseViewer({
           >
             {id}
             {id === "headers" ? ` (${Object.keys(result.headers).length})` : ""}
+            {id === "tests" && testResults.length ? ` (${testResults.filter((r) => r.pass).length}/${testResults.length})` : ""}
           </button>
         ))}
       </nav>
@@ -101,7 +110,7 @@ export function ResponseViewer({
         <pre className="bg-bg border border-border rounded-sm p-3 font-mono text-[11px] text-fg whitespace-pre-wrap break-words max-h-[24rem] overflow-auto" data-testid="response-body">
           {prettyBody || <span className="text-subtle italic">empty body</span>}
         </pre>
-      ) : (
+      ) : tab === "headers" ? (
         <ul className="font-mono text-[11px] divide-y divide-border max-h-[24rem] overflow-auto">
           {Object.entries(result.headers).map(([key, value]) => (
             <li key={key} className="py-1 grid grid-cols-[14rem_1fr] gap-2">
@@ -110,6 +119,23 @@ export function ResponseViewer({
             </li>
           ))}
         </ul>
+      ) : (
+        testResults.length === 0 ? (
+          <p className="font-mono text-xs text-subtle">no test script — add assertions in the request "Tests" tab</p>
+        ) : (
+          <ul className="font-mono text-[11px] space-y-1" data-testid="response-tests">
+            {testResults.map((r, idx) => (
+              <li
+                key={idx}
+                className={r.pass ? "text-success" : "text-error"}
+              >
+                <span className="mr-2">{r.pass ? "✓" : "✗"}</span>
+                <span>{r.label}</span>
+                {r.detail ? <span className="text-subtle ml-2">{r.detail}</span> : null}
+              </li>
+            ))}
+          </ul>
+        )
       )}
     </section>
   );

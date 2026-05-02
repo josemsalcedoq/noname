@@ -18,7 +18,8 @@ Local-only PDF operations behind a tabbed page: merge multiple PDFs into one, sp
 | 2     | Page operations: reorder (up/down arrows), rotate, delete     | done   |
 | 2.1   | Insert blank page anywhere                                    | done   |
 | 3     | In-browser viewer (PDF.js) — view-only with zoom + paging     | done   |
-| 3.1   | Annotations (highlight, free-text, drawing) — canvas overlay  | future |
+| 3.1   | Sticky-note annotations (click-on-canvas → pikepdf `/Text` annotation) | done   |
+| 3.2   | Highlight rectangles, free-text overlays, ink/freehand drawing | future |
 | 4     | Searchable PDF output (text layer via `ocrmypdf`)             | done   |
 | 5     | AcroForm fill (discover field names + write back values)      | done   |
 | 5.1   | XFA forms (Adobe-only — out of scope, document)               | future |
@@ -95,7 +96,7 @@ Feature: PDF tools operations
 
 ## Out of scope (v1, current state)
 - Page reorder / rotate / delete / insert (Phase 2).
-- Annotations: highlight, underline, free-text, drawing (Phase 3).
+- Annotations beyond sticky notes: highlight rectangles, underline, free-text, ink/drawing (Phase 3.2+).
 - Searchable / "OCR'd" PDF output (Phase 4).
 - Text-content editing (Phase 5+).
 - Form fill, signatures, redaction.
