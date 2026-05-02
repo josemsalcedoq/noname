@@ -139,3 +139,96 @@ def generate_uuid(count: int = 1) -> list[str]:
         A list of UUID strings.
     """
     return pure.generate_uuid(count)
+
+
+import json
+import time
+
+
+@mcp.tool()
+def youtube_probe(url: str) -> dict:
+    """Probe a YouTube URL via yt-dlp and return the available metadata.
+
+    Args:
+        url: youtube.com / youtu.be URL.
+    Returns:
+        {"title": str, "duration": int, "thumbnail": str, "uploader": str, "available_qualities": [str]}
+    """
+    return backend.youtube_probe(url)
+
+
+@mcp.tool()
+def youtube_download(url: str, mode: str = "video", quality: str = "720p", wait: bool = True, timeout_seconds: int = 600) -> dict:
+    """Start a YouTube download and (optionally) poll until it finishes.
+
+    Args:
+        url: youtube.com / youtu.be URL.
+        mode: "video" or "audio-only".
+        quality: e.g. "1080p", "720p", "audio-192k".
+        wait: poll until the job leaves the running state, default true.
+        timeout_seconds: cap on the total wait, default 600.
+    Returns:
+        Final job state {"id", "status", "progress", "file_path", ...}.
+    """
+    job = backend.youtube_download(url, mode=mode, quality=quality)
+    if not wait:
+        return job
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        time.sleep(2)
+        job = backend.youtube_job(job["id"])
+        if job["status"] in {"done", "error", "cancelled"}:
+            return job
+    return job
+
+
+@mcp.resource("noname://collections")
+def list_collections_resource() -> str:
+    """List of saved HTTP client collections."""
+    return json.dumps(backend.get_collections(), indent=2)
+
+
+@mcp.resource("noname://notes")
+def list_notes_resource() -> str:
+    """All non-archived personal notes."""
+    return json.dumps(backend.get_notes(), indent=2)
+
+
+@mcp.resource("noname://todos/open")
+def list_open_todos_resource() -> str:
+    """All open todos."""
+    return json.dumps(backend.get_todos(status="open"), indent=2)
+
+
+@mcp.resource("noname://todos/done")
+def list_done_todos_resource() -> str:
+    """All completed todos."""
+    return json.dumps(backend.get_todos(status="done"), indent=2)
+
+
+@mcp.resource("noname://bookmarks")
+def list_bookmarks_resource() -> str:
+    """All saved bookmarks."""
+    return json.dumps(backend.get_bookmarks(), indent=2)
+
+
+@mcp.prompt()
+def transcribe_and_translate(file_path: str, target_language: str = "es") -> str:
+    """Suggested workflow: transcribe an audio/video file and translate the result."""
+    return (
+        f"Use the `transcribe_audio` tool on `{file_path}` to get a transcription, then call "
+        f"`text_translate` on the resulting text with target='{target_language}'. Return both the "
+        "original transcription and the translation."
+    )
+
+
+@mcp.prompt()
+def youtube_to_subtitles(url: str, target_language: str = "es") -> str:
+    """Suggested workflow: download a YouTube video, transcribe it, translate subtitles."""
+    return (
+        f"1. Call `youtube_download` with url='{url}' and wait=true.\n"
+        "2. Use the returned `file_path` with `transcribe_audio` (model_size='base').\n"
+        f"3. Take the `srt` field of the transcription and call `translate_srt_text` with "
+        f"target='{target_language}'.\n"
+        "4. Return the translated SRT to the user."
+    )

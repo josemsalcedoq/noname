@@ -97,3 +97,46 @@ def http_send(method: str, url: str, *, headers: list[dict[str, str]] | None = N
             "body_type": body_type,
         },
     )
+
+
+def youtube_probe(url: str) -> dict[str, Any]:
+    return _post_json("/api/youtube-downloader/probe", {"url": url})
+
+
+def youtube_download(url: str, *, mode: str = "video", quality: str = "720p") -> dict[str, Any]:
+    return _post_json(
+        "/api/youtube-downloader/download",
+        {"url": url, "mode": mode, "quality": quality},
+    )
+
+
+def youtube_job(job_id: str) -> dict[str, Any]:
+    response = requests.get(f"{_base_url()}/api/youtube-downloader/progress/{job_id}", timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_collections() -> list[dict[str, Any]]:
+    response = requests.get(f"{_base_url()}/api/http-client/collections", timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_notes() -> list[dict[str, Any]]:
+    response = requests.get(f"{_base_url()}/api/personal-hub/notes", timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_todos(*, status: str = "open") -> list[dict[str, Any]]:
+    response = requests.get(
+        f"{_base_url()}/api/personal-hub/todos?status={status}", timeout=10
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def get_bookmarks() -> list[dict[str, Any]]:
+    response = requests.get(f"{_base_url()}/api/personal-hub/bookmarks", timeout=10)
+    response.raise_for_status()
+    return response.json()
