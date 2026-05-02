@@ -24,6 +24,13 @@ backend/models/
 backend/tmp/
 backend/downloads/
 
+# --- Media files at backend root (yt-dlp shell tests sometimes drop them here) ---
+backend/*.mp4
+backend/*.webm
+backend/*.m4a
+backend/*.mp3
+backend/*.mkv
+
 # --- OS / IDE ---
 .DS_Store
 .idea/
