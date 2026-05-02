@@ -239,8 +239,53 @@ export interface SendInput {
 }
 
 export function useSend() {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: SendInput) => postJson<SendInput, SendResponse>(`${ROOT}/send`, input),
+    mutationFn: (input: SendInput & { request_node_id?: number | null }) =>
+      postJson<typeof input, SendResponse>(`${ROOT}/send`, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["http-client", "runs"] }),
+    onError: () => qc.invalidateQueries({ queryKey: ["http-client", "runs"] }),
+  });
+}
+
+export interface RunSummary {
+  id: number;
+  request_node: number | null;
+  method: Method;
+  url: string;
+  status: number | null;
+  duration_ms: number | null;
+  size_bytes: number | null;
+  error: string;
+  sent_at: string;
+}
+
+export interface RunDetail extends RunSummary {
+  snapshot: {
+    headers: KeyValue[];
+    params: KeyValue[];
+    body: string;
+    body_type: BodyType;
+    environment_id: number | null;
+  };
+  status_text: string;
+  response_headers: Record<string, string>;
+  response_body: string;
+  truncated: boolean;
+}
+
+export function useRuns(limit = 50) {
+  return useQuery({
+    queryKey: ["http-client", "runs", limit],
+    queryFn: () => fetchJson<RunSummary[]>(`${ROOT}/runs?limit=${limit}`),
+  });
+}
+
+export function useRun(runId: number | null) {
+  return useQuery({
+    queryKey: ["http-client", "run", runId],
+    queryFn: () => fetchJson<RunDetail>(`${ROOT}/runs/${runId}`),
+    enabled: runId !== null,
   });
 }
 

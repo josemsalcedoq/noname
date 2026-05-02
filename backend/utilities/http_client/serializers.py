@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Collection, Environment, Folder, RequestNode
+from .models import Collection, Environment, Folder, RequestNode, RequestRun
 
 
 class RequestSerializer(serializers.ModelSerializer):
@@ -51,6 +51,45 @@ class TreeNodeSerializer(serializers.Serializer):
     kind = serializers.ChoiceField(choices=["folder", "request"])
     method = serializers.CharField(required=False, allow_null=True)
     children = serializers.ListField(required=False)
+
+
+class RequestRunSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestRun
+        fields = (
+            "id",
+            "request_node",
+            "method",
+            "url",
+            "snapshot",
+            "status",
+            "status_text",
+            "response_headers",
+            "response_body",
+            "duration_ms",
+            "size_bytes",
+            "truncated",
+            "error",
+            "sent_at",
+        )
+        read_only_fields = fields
+
+
+class RequestRunSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestRun
+        fields = (
+            "id",
+            "request_node",
+            "method",
+            "url",
+            "status",
+            "duration_ms",
+            "size_bytes",
+            "error",
+            "sent_at",
+        )
+        read_only_fields = fields
 
 
 class SendRequestSerializer(serializers.Serializer):

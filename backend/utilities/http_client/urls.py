@@ -7,6 +7,7 @@ from .views import (
     FolderViewSet,
     ImportPostmanView,
     RequestViewSet,
+    RunViewSet,
     SendView,
 )
 
@@ -15,6 +16,7 @@ router.register("collections", CollectionViewSet, basename="collection")
 router.register("folders", FolderViewSet, basename="folder")
 router.register("requests", RequestViewSet, basename="request")
 router.register("environments", EnvironmentViewSet, basename="environment")
+router.register("runs", RunViewSet, basename="run")
 
 urlpatterns = [
     path("collections/import", ImportPostmanView.as_view(), name="http-import"),

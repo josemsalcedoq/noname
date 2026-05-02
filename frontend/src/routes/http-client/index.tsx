@@ -4,9 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import {
   useEnvironments,
   useRequest,
+  useRun,
   useSend,
   useUpdateRequest,
+  type RunSummary,
 } from "./api";
+import { HistoryPanel, workingFromRun } from "./-components/history-panel";
 import { RequestEditor, workingFromRequest, type WorkingRequest } from "./-components/request-editor";
 import { ResponseViewer } from "./-components/response-viewer";
 import { TreeSidebar } from "./-components/tree";
@@ -29,8 +32,10 @@ function HttpClientPage() {
   const [requestId, setRequestId] = useState<number | null>(null);
   const [working, setWorking] = useState<WorkingRequest>(EMPTY_WORKING);
   const [environmentId, setEnvironmentId] = useState<number | null>(null);
+  const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
 
   const requestQuery = useRequest(requestId);
+  const runDetail = useRun(selectedRunId);
   const update = useUpdateRequest();
   const send = useSend();
   const environments = useEnvironments();
@@ -40,6 +45,15 @@ function HttpClientPage() {
       setWorking(workingFromRequest(requestQuery.data));
     }
   }, [requestQuery.data]);
+
+  useEffect(() => {
+    if (runDetail.data) {
+      setWorking(workingFromRun(runDetail.data));
+      if (runDetail.data.snapshot.environment_id !== undefined) {
+        setEnvironmentId(runDetail.data.snapshot.environment_id);
+      }
+    }
+  }, [runDetail.data]);
 
   const isDirty = useMemo(() => {
     if (!requestQuery.data) return false;
@@ -51,11 +65,17 @@ function HttpClientPage() {
     send.mutate({
       ...working,
       environment_id: environmentId,
+      request_node_id: requestId,
     });
 
   const onSave = () => {
     if (requestId === null) return;
     update.mutate({ id: requestId, ...working });
+  };
+
+  const onSelectRun = (run: RunSummary) => {
+    setSelectedRunId(run.id);
+    setRequestId(null);
   };
 
   return (
@@ -97,9 +117,13 @@ function HttpClientPage() {
           onSelectCollection={(id) => {
             setCollectionId(id);
             setRequestId(null);
+            setSelectedRunId(null);
             setWorking(EMPTY_WORKING);
           }}
-          onSelectRequest={setRequestId}
+          onSelectRequest={(id) => {
+            setRequestId(id);
+            setSelectedRunId(null);
+          }}
         />
 
         <div className="flex-1 min-w-0 space-y-4">
@@ -119,6 +143,8 @@ function HttpClientPage() {
             isPending={send.isPending}
           />
         </div>
+
+        <HistoryPanel selectedRunId={selectedRunId} onSelectRun={onSelectRun} />
       </div>
     </article>
   );

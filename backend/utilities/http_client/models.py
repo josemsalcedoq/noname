@@ -58,3 +58,28 @@ class Environment(models.Model):
 
     class Meta:
         ordering = ["name"]
+
+
+class RequestRun(models.Model):
+    request_node = models.ForeignKey(
+        RequestNode,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="runs",
+    )
+    method = models.CharField(max_length=10)
+    url = models.TextField()
+    snapshot = models.JSONField(default=dict)
+    status = models.IntegerField(null=True, blank=True)
+    status_text = models.CharField(max_length=200, blank=True, default="")
+    response_body = models.TextField(blank=True, default="")
+    response_headers = models.JSONField(default=dict)
+    duration_ms = models.IntegerField(null=True, blank=True)
+    size_bytes = models.IntegerField(null=True, blank=True)
+    truncated = models.BooleanField(default=False)
+    error = models.TextField(blank=True, default="")
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-sent_at"]
