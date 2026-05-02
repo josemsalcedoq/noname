@@ -1,0 +1,25 @@
+[project]
+name = "noname-mcp"
+version = "0.1.0"
+description = "MCP server exposing noname utilities to Claude Code"
+authors = [
+    {name = "josemsalcedoq",email = "josemsalcedoq@icloud.com"}
+]
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "mcp[cli] (>=1.27.0,<2.0.0)",
+    "requests (>=2.33.1,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    "tomli-w (>=1.2.0,<2.0.0)",
+    "qrcode (>=8.2,<9.0)"
+]
+
+[project.scripts]
+noname-mcp = "noname_mcp.__main__:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [{ include = "noname_mcp" }]
