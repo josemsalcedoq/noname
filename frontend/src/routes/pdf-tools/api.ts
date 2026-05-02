@@ -74,10 +74,9 @@ export interface ThumbnailsResult {
   thumbnails: string[];
 }
 
-export interface PageOperation {
-  source: number;
-  rotation: 0 | 90 | 180 | 270;
-}
+export type PageOperation =
+  | { source: number; rotation: 0 | 90 | 180 | 270 }
+  | { blank: true; width?: number; height?: number };
 
 export function useThumbnails() {
   return useMutation({
@@ -96,6 +95,17 @@ export function useManipulate() {
       body.append("file", input.file);
       body.append("operations", JSON.stringify(input.operations));
       return postMultipartBlob("/api/pdf-tools/manipulate", body);
+    },
+  });
+}
+
+export function useMakeSearchable() {
+  return useMutation({
+    mutationFn: async (input: { file: File; languages: string }) => {
+      const body = new FormData();
+      body.append("file", input.file);
+      body.append("languages", input.languages);
+      return postMultipartBlob("/api/pdf-tools/searchable", body);
     },
   });
 }

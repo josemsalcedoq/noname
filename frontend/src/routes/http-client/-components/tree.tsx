@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   useCollections,
@@ -11,6 +12,36 @@ import {
   type Method,
   type TreeNode,
 } from "../api";
+
+interface ReorderInput {
+  collectionId: number;
+  parentId: number | null;
+  items: { id: number; kind: "folder" | "request"; position: number }[];
+}
+
+function useReorderTree() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ReorderInput) => {
+      await Promise.all(
+        input.items.map((item) => {
+          const url =
+            item.kind === "folder"
+              ? `/api/http-client/folders/${item.id}`
+              : `/api/http-client/requests/${item.id}`;
+          return fetch(url, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ position: item.position }),
+          });
+        }),
+      );
+      return input;
+    },
+    onSuccess: (input) =>
+      qc.invalidateQueries({ queryKey: ["http-client", "tree", input.collectionId] }),
+  });
+}
 
 export function TreeSidebar({
   selectedCollection,
@@ -27,6 +58,25 @@ export function TreeSidebar({
   const tree = useCollectionTree(selectedCollection);
   const createCollection = useCreateCollection();
   const importPostman = useImportPostman();
+  const reorder = useReorderTree();
+
+  const onReorder = (
+    parentId: number | null,
+    siblings: TreeNode[],
+    fromIndex: number,
+    delta: number,
+  ) => {
+    if (selectedCollection === null) return;
+    const target = fromIndex + delta;
+    if (target < 0 || target >= siblings.length) return;
+    const next = [...siblings];
+    [next[fromIndex], next[target]] = [next[target], next[fromIndex]];
+    reorder.mutate({
+      collectionId: selectedCollection,
+      parentId,
+      items: next.map((node, index) => ({ id: node.id, kind: node.kind, position: index })),
+    });
+  };
   const createFolder = useCreateFolder();
   const createRequest = useCreateRequest();
   const [showNew, setShowNew] = useState(false);
@@ -135,6 +185,7 @@ export function TreeSidebar({
               });
             }
           }}
+          onReorder={onReorder}
         />
       ) : selectedCollection !== null && tree.isLoading ? (
         <p className="font-mono text-[11px] text-subtle">loading…</p>
@@ -151,12 +202,14 @@ function CollectionTreeView({
   onSelectRequest,
   onCreateFolder,
   onCreateRequest,
+  onReorder,
 }: {
   tree: CollectionTree;
   selectedRequest: number | null;
   onSelectRequest: (id: number) => void;
   onCreateFolder: (parent: number | null) => void;
   onCreateRequest: (folder: number | null) => void;
+  onReorder: (parentId: number | null, siblings: TreeNode[], fromIndex: number, delta: number) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -184,7 +237,7 @@ function CollectionTreeView({
         </div>
       </div>
       <ul className="space-y-0.5">
-        {tree.items.map((node) => (
+        {tree.items.map((node, index) => (
           <NodeRow
             key={`${node.kind}-${node.id}`}
             node={node}
@@ -193,6 +246,10 @@ function CollectionTreeView({
             onSelectRequest={onSelectRequest}
             onCreateFolder={onCreateFolder}
             onCreateRequest={onCreateRequest}
+            onReorder={onReorder}
+            siblings={tree.items}
+            indexInParent={index}
+            parentId={null}
           />
         ))}
       </ul>
@@ -207,6 +264,10 @@ function NodeRow({
   onSelectRequest,
   onCreateFolder,
   onCreateRequest,
+  onReorder,
+  siblings,
+  indexInParent,
+  parentId,
 }: {
   node: TreeNode;
   depth: number;
@@ -214,8 +275,14 @@ function NodeRow({
   onSelectRequest: (id: number) => void;
   onCreateFolder: (parent: number | null) => void;
   onCreateRequest: (folder: number | null) => void;
+  onReorder: (parentId: number | null, siblings: TreeNode[], fromIndex: number, delta: number) => void;
+  siblings: TreeNode[];
+  indexInParent: number;
+  parentId: number | null;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const canMoveUp = indexInParent > 0;
+  const canMoveDown = indexInParent < siblings.length - 1;
 
   if (node.kind === "request") {
     const active = node.id === selectedRequest;
@@ -223,14 +290,26 @@ function NodeRow({
       <li
         style={{ paddingLeft: depth * 10 }}
         className={[
-          "flex items-center gap-2 px-1 py-0.5 font-mono text-xs cursor-pointer rounded-sm",
+          "group flex items-center gap-1 px-1 py-0.5 font-mono text-xs cursor-pointer rounded-sm",
           active ? "bg-accent-soft text-accent" : "text-muted hover:text-fg",
         ].join(" ")}
         onClick={() => onSelectRequest(node.id)}
         data-testid={`tree-request-${node.id}`}
       >
         <MethodBadge method={node.method} />
-        <span className="truncate">{node.name}</span>
+        <span className="truncate flex-1">{node.name}</span>
+        <ReorderButtons
+          canUp={canMoveUp}
+          canDown={canMoveDown}
+          onUp={(e) => {
+            e.stopPropagation();
+            onReorder(parentId, siblings, indexInParent, -1);
+          }}
+          onDown={(e) => {
+            e.stopPropagation();
+            onReorder(parentId, siblings, indexInParent, 1);
+          }}
+        />
       </li>
     );
   }
@@ -249,6 +328,18 @@ function NodeRow({
           {expanded ? "▾" : "▸"}
         </button>
         <span className="truncate flex-1">{node.name}</span>
+        <ReorderButtons
+          canUp={canMoveUp}
+          canDown={canMoveDown}
+          onUp={(e) => {
+            e.stopPropagation();
+            onReorder(parentId, siblings, indexInParent, -1);
+          }}
+          onDown={(e) => {
+            e.stopPropagation();
+            onReorder(parentId, siblings, indexInParent, 1);
+          }}
+        />
         <button
           type="button"
           onClick={() => onCreateRequest(node.id)}
@@ -268,7 +359,7 @@ function NodeRow({
       </div>
       {expanded ? (
         <ul className="space-y-0.5">
-          {node.children.map((child) => (
+          {node.children.map((child, childIndex) => (
             <NodeRow
               key={`${child.kind}-${child.id}`}
               node={child}
@@ -277,11 +368,50 @@ function NodeRow({
               onSelectRequest={onSelectRequest}
               onCreateFolder={onCreateFolder}
               onCreateRequest={onCreateRequest}
+              onReorder={onReorder}
+              siblings={node.children}
+              indexInParent={childIndex}
+              parentId={node.id}
             />
           ))}
         </ul>
       ) : null}
     </li>
+  );
+}
+
+function ReorderButtons({
+  canUp,
+  canDown,
+  onUp,
+  onDown,
+}: {
+  canUp: boolean;
+  canDown: boolean;
+  onUp: (e: React.MouseEvent) => void;
+  onDown: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <span className="flex font-mono text-[9px] text-subtle opacity-0 group-hover:opacity-100">
+      <button
+        type="button"
+        onClick={onUp}
+        disabled={!canUp}
+        className="px-1 hover:text-accent disabled:opacity-30"
+        title="Move up"
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        onClick={onDown}
+        disabled={!canDown}
+        className="px-1 hover:text-accent disabled:opacity-30"
+        title="Move down"
+      >
+        ↓
+      </button>
+    </span>
   );
 }
 

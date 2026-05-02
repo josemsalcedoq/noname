@@ -94,10 +94,11 @@ def thumbnails(stream: io.BytesIO, *, max_width: int = 220) -> dict:
 
 
 def manipulate_pages(stream: io.BytesIO, operations: list[dict]) -> bytes:
-    """Reorder / rotate / drop pages.
+    """Reorder / rotate / drop / insert blank pages.
 
-    operations is a list of {"source": <1-indexed page>, "rotation": 0|90|180|270}
-    in the desired output order. Pages omitted from the list are dropped.
+    Each operation in the desired output order is one of:
+    - {"source": <1-indexed page>, "rotation": 0|90|180|270} — keep + rotate
+    - {"blank": true, "width": <pt>, "height": <pt>} — insert a blank page (defaults to A4)
     """
     if not operations:
         raise PdfError("at least one page must be kept")
@@ -107,6 +108,11 @@ def manipulate_pages(stream: io.BytesIO, operations: list[dict]) -> bytes:
         output = pikepdf.Pdf.new()
         try:
             for op in operations:
+                if op.get("blank"):
+                    width = float(op.get("width") or 595)
+                    height = float(op.get("height") or 842)
+                    output.add_blank_page(page_size=(width, height))
+                    continue
                 src_index = int(op.get("source", 0))
                 if src_index < 1 or src_index > total:
                     raise PdfError(f"page {src_index} out of bounds (document has {total} pages)")
@@ -121,6 +127,47 @@ def manipulate_pages(stream: io.BytesIO, operations: list[dict]) -> bytes:
             return buffer.getvalue()
         finally:
             output.close()
+
+
+def make_searchable(stream: io.BytesIO, *, languages: str = "eng+spa") -> bytes:
+    """Run ocrmypdf to add a text layer to a scanned PDF and return the new PDF bytes.
+
+    Requires ocrmypdf + ghostscript + tesseract on the host.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+    from pathlib import Path as _Path
+
+    if not shutil.which("ocrmypdf"):
+        raise PdfError("ocrmypdf binary not found; install with `brew install ocrmypdf`")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = _Path(tmp)
+        input_path = tmp_path / "in.pdf"
+        output_path = tmp_path / "out.pdf"
+        input_path.write_bytes(stream.getvalue())
+
+        result = subprocess.run(
+            [
+                "ocrmypdf",
+                "--language",
+                languages,
+                "--skip-text",
+                "--quiet",
+                "--output-type",
+                "pdf",
+                str(input_path),
+                str(output_path),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            raise PdfError(
+                f"ocrmypdf failed (exit {result.returncode}): {result.stderr.strip()[:500]}"
+            )
+        return output_path.read_bytes()
 
 
 def ocr_pdf(stream: io.BytesIO, *, languages: str = "eng+spa", dpi: int = 200) -> dict:

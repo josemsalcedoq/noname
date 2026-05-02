@@ -160,6 +160,34 @@ class ManipulateView(APIView):
         return response
 
 
+class SearchableView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        upload = request.FILES.get("file")
+        languages = request.data.get("languages", "eng+spa")
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            result = services.make_searchable(io.BytesIO(upload.read()), languages=languages)
+        except services.PdfError as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "ocr_failed", str(exc))
+        stem = Path(upload.name).stem
+        response = HttpResponse(result, content_type=PDF_MIME)
+        response["Content-Disposition"] = f'attachment; filename="{stem}_searchable.pdf"'
+        return response
+
+
 class OcrView(APIView):
     parser_classes = [MultiPartParser]
 

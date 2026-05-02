@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   downloadBlob,
   useExtractText,
+  useMakeSearchable,
   useManipulate,
   useMergePdfs,
   useOcrPdf,
@@ -13,14 +14,16 @@ import {
   type PageOperation,
 } from "./api";
 
-type PdfTab = "merge" | "split" | "pages" | "extract" | "ocr";
+type PdfTab = "merge" | "split" | "pages" | "view" | "extract" | "ocr" | "searchable";
 
 const TABS: { id: PdfTab; label: string }[] = [
+  { id: "view", label: "View" },
   { id: "merge", label: "Merge" },
   { id: "split", label: "Split" },
   { id: "pages", label: "Pages" },
   { id: "extract", label: "Extract text" },
   { id: "ocr", label: "OCR" },
+  { id: "searchable", label: "Searchable" },
 ];
 
 export const Route = createFileRoute("/pdf-tools/")({
@@ -68,11 +71,13 @@ function PdfToolsPage() {
       </nav>
 
       <section className="pt-2">
+        {tab === "view" ? <ViewTab /> : null}
         {tab === "merge" ? <MergeTab /> : null}
         {tab === "split" ? <SplitTab /> : null}
         {tab === "pages" ? <PagesTab /> : null}
         {tab === "extract" ? <ExtractTab /> : null}
         {tab === "ocr" ? <OcrTab /> : null}
+        {tab === "searchable" ? <SearchableTab /> : null}
       </section>
     </article>
   );
@@ -296,12 +301,9 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-interface PageState {
-  source: number;
-  rotation: 0 | 90 | 180 | 270;
-  thumbnail: string;
-  id: string;
-}
+type PageState =
+  | { kind: "source"; source: number; rotation: 0 | 90 | 180 | 270; thumbnail: string; id: string }
+  | { kind: "blank"; id: string };
 
 function PagesTab() {
   const [file, setFile] = useState<File | null>(null);
@@ -316,6 +318,7 @@ function PagesTab() {
       onSuccess: (data) => {
         setPages(
           data.thumbnails.map((thumb, index) => ({
+            kind: "source" as const,
             source: index + 1,
             rotation: 0 as const,
             thumbnail: thumb,
@@ -339,20 +342,31 @@ function PagesTab() {
 
   const rotate = (index: number, delta: 90 | -90) => {
     setPages((prev) =>
-      prev.map((p, i) =>
-        i === index
-          ? { ...p, rotation: ((((p.rotation + delta) % 360) + 360) % 360) as PageState["rotation"] }
-          : p,
-      ),
+      prev.map((p, i) => {
+        if (i !== index || p.kind !== "source") return p;
+        const next = ((((p.rotation + delta) % 360) + 360) % 360) as 0 | 90 | 180 | 270;
+        return { ...p, rotation: next };
+      }),
     );
   };
 
   const remove = (index: number) =>
     setPages((prev) => prev.filter((_, i) => i !== index));
 
+  const insertBlank = (after: number) => {
+    const newPage: PageState = { kind: "blank", id: `b-${Math.random().toString(36).slice(2, 8)}` };
+    setPages((prev) => {
+      const next = [...prev];
+      next.splice(after + 1, 0, newPage);
+      return next;
+    });
+  };
+
   const apply = async () => {
     if (!file || !pages.length) return;
-    const operations: PageOperation[] = pages.map((p) => ({ source: p.source, rotation: p.rotation }));
+    const operations: PageOperation[] = pages.map((p) =>
+      p.kind === "blank" ? { blank: true } : { source: p.source, rotation: p.rotation },
+    );
     const result = await manipulate.mutateAsync({ file, operations });
     downloadBlob(result.blob, result.filename);
   };
@@ -386,18 +400,27 @@ function PagesTab() {
                 data-testid={`page-card-${index}`}
               >
                 <div className="bg-bg flex items-center justify-center min-h-[10rem] overflow-hidden">
-                  <img
-                    src={page.thumbnail}
-                    alt={`page ${page.source}`}
-                    style={{ transform: `rotate(${page.rotation}deg)` }}
-                    className="max-w-full max-h-[14rem] transition-transform"
-                  />
+                  {page.kind === "source" ? (
+                    <img
+                      src={page.thumbnail}
+                      alt={`page ${page.source}`}
+                      style={{ transform: `rotate(${page.rotation}deg)` }}
+                      className="max-w-full max-h-[14rem] transition-transform"
+                    />
+                  ) : (
+                    <div className="w-32 h-44 bg-fg/5 border border-dashed border-subtle flex items-center justify-center">
+                      <span className="font-mono text-[10px] text-subtle">blank</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center justify-between font-mono text-[10px] text-subtle">
                   <span>
-                    pos {index + 1} · src {page.source}
+                    pos {index + 1}{" "}
+                    {page.kind === "source" ? `· src ${page.source}` : "· (blank)"}
                   </span>
-                  {page.rotation ? <span className="text-accent">{page.rotation}°</span> : null}
+                  {page.kind === "source" && page.rotation ? (
+                    <span className="text-accent">{page.rotation}°</span>
+                  ) : null}
                 </div>
                 <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
                   <button
@@ -416,24 +439,38 @@ function PagesTab() {
                   >
                     ↓ down
                   </button>
+                  {page.kind === "source" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => rotate(index, -90)}
+                        className="px-1.5 py-1 border border-border hover:border-accent rounded-sm"
+                      >
+                        ↺ rot
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => rotate(index, 90)}
+                        className="px-1.5 py-1 border border-border hover:border-accent rounded-sm"
+                      >
+                        ↻ rot
+                      </button>
+                    </>
+                  ) : (
+                    <span className="col-span-2 px-1.5 py-1 text-subtle text-center">—</span>
+                  )}
                   <button
                     type="button"
-                    onClick={() => rotate(index, -90)}
+                    onClick={() => insertBlank(index)}
                     className="px-1.5 py-1 border border-border hover:border-accent rounded-sm"
+                    title="insert blank page after"
                   >
-                    ↺ rot
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => rotate(index, 90)}
-                    className="px-1.5 py-1 border border-border hover:border-accent rounded-sm"
-                  >
-                    ↻ rot
+                    + blank
                   </button>
                   <button
                     type="button"
                     onClick={() => remove(index)}
-                    className="col-span-2 px-1.5 py-1 border border-error text-error hover:bg-error/10 rounded-sm"
+                    className="px-1.5 py-1 border border-error text-error hover:bg-error/10 rounded-sm"
                   >
                     × delete
                   </button>
@@ -460,6 +497,183 @@ function PagesTab() {
                 {(manipulate.error as Error).message}
               </span>
             ) : null}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function SearchableTab() {
+  const [file, setFile] = useState<File | null>(null);
+  const [languages, setLanguages] = useState("eng+spa");
+  const searchable = useMakeSearchable();
+
+  const onRun = async () => {
+    if (!file) return;
+    const result = await searchable.mutateAsync({ file, languages });
+    downloadBlob(result.blob, result.filename);
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="font-serif italic text-muted text-sm max-w-prose">
+        Adds a real text layer to a scanned PDF using <span className="font-mono text-fg">ocrmypdf</span>{" "}
+        (skips pages that already have text). Output stays a PDF — searchable in any reader.
+      </p>
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="block w-full font-mono text-xs file:mr-3 file:px-3 file:py-1.5 file:bg-accent file:text-bg file:border-0 file:rounded-sm file:font-mono file:text-xs file:cursor-pointer text-muted"
+        data-testid="searchable-input"
+      />
+      <label className="block">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+          Languages (Tesseract codes, joined with +)
+        </span>
+        <input
+          value={languages}
+          onChange={(e) => setLanguages(e.target.value)}
+          placeholder="eng+spa"
+          className="mt-2 w-full bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+        />
+      </label>
+      <button
+        type="button"
+        onClick={onRun}
+        disabled={!file || searchable.isPending}
+        className="px-4 py-2 bg-accent text-bg font-mono text-sm rounded-sm hover:opacity-90 disabled:opacity-40"
+        data-testid="searchable-button"
+      >
+        {searchable.isPending ? "running ocrmypdf…" : "make searchable & download"}
+      </button>
+      {searchable.isError ? (
+        <p className="font-mono text-xs text-error" role="alert">
+          {(searchable.error as Error).message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function ViewTab() {
+  const [file, setFile] = useState<File | null>(null);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pdfRef = useRef<unknown>(null);
+  const [scale, setScale] = useState(1.2);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) return;
+    let cancelled = false;
+    setError(null);
+    setPageCount(0);
+    setCurrentPage(1);
+    (async () => {
+      try {
+        const pdfjs = await import("pdfjs-dist");
+        pdfjs.GlobalWorkerOptions.workerSrc = (
+          await import("pdfjs-dist/build/pdf.worker.mjs?url")
+        ).default;
+        const buffer = await file.arrayBuffer();
+        const document = await pdfjs.getDocument({ data: buffer }).promise;
+        if (cancelled) return;
+        pdfRef.current = document;
+        setPageCount(document.numPages);
+      } catch (err) {
+        if (!cancelled) setError((err as Error).message);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [file]);
+
+  useEffect(() => {
+    const document = pdfRef.current as
+      | { getPage: (n: number) => Promise<{ getViewport: (o: { scale: number }) => { width: number; height: number }; render: (o: { canvasContext: CanvasRenderingContext2D; viewport: unknown }) => { promise: Promise<void> } }> }
+      | null;
+    if (!document || !canvasRef.current || pageCount === 0) return;
+    let cancelled = false;
+    (async () => {
+      const page = await document.getPage(currentPage);
+      const viewport = page.getViewport({ scale });
+      const canvas = canvasRef.current!;
+      const context = canvas.getContext("2d");
+      if (!context || cancelled) return;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: context, viewport }).promise;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, pageCount, scale]);
+
+  return (
+    <div className="space-y-4">
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="block w-full font-mono text-xs file:mr-3 file:px-3 file:py-1.5 file:bg-accent file:text-bg file:border-0 file:rounded-sm file:font-mono file:text-xs file:cursor-pointer text-muted"
+        data-testid="view-input"
+      />
+      {error ? <p className="font-mono text-xs text-error" role="alert">{error}</p> : null}
+      {pageCount > 0 ? (
+        <>
+          <div className="flex items-center gap-3 font-mono text-xs">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border border-border hover:border-accent rounded-sm disabled:opacity-30"
+            >
+              ← prev
+            </button>
+            <span className="text-subtle">page</span>
+            <input
+              type="number"
+              min={1}
+              max={pageCount}
+              value={currentPage}
+              onChange={(e) =>
+                setCurrentPage(Math.max(1, Math.min(pageCount, Number(e.target.value) || 1)))
+              }
+              className="w-16 bg-bg border border-border text-fg px-2 py-1 rounded-sm focus:border-accent focus:outline-none text-center"
+            />
+            <span className="text-subtle">of {pageCount}</span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
+              disabled={currentPage === pageCount}
+              className="px-3 py-1 border border-border hover:border-accent rounded-sm disabled:opacity-30"
+            >
+              next →
+            </button>
+            <span className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
+                className="px-2 py-1 border border-border hover:border-accent rounded-sm"
+              >
+                −
+              </button>
+              <span className="text-subtle">{Math.round(scale * 100)}%</span>
+              <button
+                type="button"
+                onClick={() => setScale((s) => Math.min(3, s + 0.2))}
+                className="px-2 py-1 border border-border hover:border-accent rounded-sm"
+              >
+                +
+              </button>
+            </span>
+          </div>
+          <div className="bg-fg/5 border border-border rounded-sm p-3 overflow-auto max-h-[70vh]">
+            <canvas ref={canvasRef} className="mx-auto bg-white" />
           </div>
         </>
       ) : null}
