@@ -57,6 +57,10 @@ def build_args(job: YoutubeJob, output_dir: Path) -> list[str]:
         "--http-chunk-size",
         "10M",
         "--no-mtime",
+        "--retries",
+        "3",
+        "--fragment-retries",
+        "5",
         "-o",
         output_template,
     ]
@@ -65,14 +69,11 @@ def build_args(job: YoutubeJob, output_dir: Path) -> list[str]:
         args += ["-x", "--audio-format", "mp3", "--audio-quality", bitrate]
     else:
         if job.quality == "best":
-            video_fmt = "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+            video_fmt = "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
         else:
             height = job.quality.removesuffix("p")
-            video_fmt = (
-                f"bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]"
-                f"/best[height<={height}][ext=mp4]/best[height<={height}]"
-            )
-        args += ["-f", video_fmt, "--merge-output-format", "mp4"]
+            video_fmt = f"bestvideo[height<={height}]+bestaudio/best[height<={height}]"
+        args += ["-f", video_fmt, "--remux-video", "mp4"]
     args.append(job.url)
     return args
 
