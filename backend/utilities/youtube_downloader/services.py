@@ -64,6 +64,9 @@ def build_args(job: YoutubeJob, output_dir: Path) -> list[str]:
         "-o",
         output_template,
     ]
+    cookies_browser = os.environ.get("COOKIES_FROM_BROWSER", "").strip()
+    if cookies_browser:
+        args += ["--cookies-from-browser", cookies_browser]
     if job.mode == YoutubeJob.Mode.AUDIO:
         bitrate = job.quality.removeprefix("audio-").removesuffix("k") or "192"
         args += ["-x", "--audio-format", "mp3", "--audio-quality", bitrate]
@@ -138,9 +141,10 @@ def _run(job_id, output_dir: Path) -> None:
 
 
 def _extract_destination(line: str) -> str | None:
-    for marker in ("[download] Destination: ", "[Merger] Merging formats into "):
-        if marker in line:
-            return line.split(marker, 1)[1].strip().strip('"')
+    if "Merging formats into" in line:
+        return line.split("Merging formats into", 1)[1].strip().strip('"')
+    if "Destination: " in line:
+        return line.split("Destination: ", 1)[1].strip().strip('"')
     return None
 
 

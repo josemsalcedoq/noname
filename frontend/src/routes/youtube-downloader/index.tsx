@@ -179,7 +179,11 @@ function YoutubeDownloaderPage() {
       {job.data ? (
         <section className="space-y-2" data-testid="job-status">
           <div className="flex items-center justify-between font-mono text-xs">
-            <span className="uppercase tracking-[0.2em] text-subtle">{job.data.status}</span>
+            <span className="uppercase tracking-[0.2em] text-subtle">
+              {job.data.status === "running" && job.data.progress >= 99.9
+                ? "finalizing"
+                : job.data.status}
+            </span>
             <span className="text-muted">{job.data.progress.toFixed(1)}%</span>
           </div>
           <div className="h-1 w-full bg-border rounded-sm overflow-hidden">
