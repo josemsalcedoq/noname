@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import type { BodyType, KeyValue, Method, RequestNode } from "../api";
+import { buildCurl, CurlParseError, parseCurl } from "./curl";
 import { KeyValueEditor } from "./kv-editor";
 
 const METHODS: Method[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
@@ -46,12 +47,93 @@ export function RequestEditor({
   canSave: boolean;
 }) {
   const [tab, setTab] = useState<"params" | "headers" | "body">("params");
+  const [curlOpen, setCurlOpen] = useState(false);
+  const [curlInput, setCurlInput] = useState("");
+  const [curlError, setCurlError] = useState<string | null>(null);
+  const [curlCopied, setCurlCopied] = useState(false);
+
+  const onCopyAsCurl = async () => {
+    const command = buildCurl(value);
+    await navigator.clipboard.writeText(command);
+    setCurlCopied(true);
+    setTimeout(() => setCurlCopied(false), 1500);
+  };
+
+  const onImportCurl = () => {
+    setCurlError(null);
+    try {
+      const parsed = parseCurl(curlInput);
+      onChange({
+        method: parsed.method,
+        url: parsed.url,
+        headers: parsed.headers,
+        params: value.params,
+        body: parsed.body,
+        body_type: parsed.body_type,
+      });
+      setCurlInput("");
+      setCurlOpen(false);
+    } catch (err) {
+      setCurlError(err instanceof CurlParseError ? err.message : (err as Error).message);
+    }
+  };
 
   const update = <K extends keyof WorkingRequest>(key: K, patch: WorkingRequest[K]) =>
     onChange({ ...value, [key]: patch });
 
   return (
     <section className="border border-border rounded-sm bg-surface/30 p-3 space-y-3">
+      <div className="flex items-center justify-end gap-2 -mt-1 -mb-1">
+        <button
+          type="button"
+          onClick={() => setCurlOpen((prev) => !prev)}
+          className="px-2 py-1 font-mono text-[10px] text-subtle hover:text-accent border border-border hover:border-accent rounded-sm"
+          data-testid="curl-import-toggle"
+        >
+          {curlOpen ? "close" : "import cURL"}
+        </button>
+        <button
+          type="button"
+          onClick={onCopyAsCurl}
+          disabled={!value.url.trim()}
+          className="px-2 py-1 font-mono text-[10px] text-subtle hover:text-accent border border-border hover:border-accent rounded-sm disabled:opacity-40"
+          data-testid="curl-copy"
+        >
+          {curlCopied ? "copied" : "copy as cURL"}
+        </button>
+      </div>
+
+      {curlOpen ? (
+        <div className="space-y-2 border border-border rounded-sm p-3 bg-bg/40">
+          <textarea
+            value={curlInput}
+            onChange={(e) => setCurlInput(e.target.value)}
+            spellCheck={false}
+            placeholder='curl -X POST https://api.example.com/v1/users -H "Authorization: Bearer ..." -d ...'
+            className="w-full min-h-[6rem] bg-bg border border-border text-fg font-mono text-xs px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+            data-testid="curl-input"
+          />
+          <div className="flex items-center justify-between">
+            {curlError ? (
+              <p className="font-mono text-[10px] text-error" role="alert">{curlError}</p>
+            ) : (
+              <p className="font-mono text-[10px] text-subtle">
+                supports -X, -H, -d / --data*, -u, --location, line continuations
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={onImportCurl}
+              disabled={!curlInput.trim()}
+              className="px-3 py-1 bg-accent text-bg font-mono text-[11px] rounded-sm hover:opacity-90 disabled:opacity-40"
+              data-testid="curl-parse"
+            >
+              parse & fill
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex gap-2">
         <select
           value={value.method}
