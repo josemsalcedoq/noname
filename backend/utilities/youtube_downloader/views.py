@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from django.http import FileResponse
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -54,3 +57,14 @@ class CancelView(APIView):
         services.cancel(job)
         job.refresh_from_db()
         return Response(JobSerializer(job).data)
+
+
+class FileView(APIView):
+    def get(self, request, job_id):
+        job = get_object_or_404(YoutubeJob, id=job_id)
+        if not job.file_path:
+            return _error(status.HTTP_404_NOT_FOUND, "no_file", "Job has no associated file.")
+        path = Path(job.file_path)
+        if not path.is_file():
+            return _error(status.HTTP_404_NOT_FOUND, "file_missing", "File no longer exists on disk.")
+        return FileResponse(open(path, "rb"), as_attachment=True, filename=path.name)

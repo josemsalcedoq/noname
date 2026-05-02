@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   useCancel,
@@ -28,6 +28,21 @@ function YoutubeDownloaderPage() {
   const startDownload = useStartDownload();
   const cancel = useCancel();
   const job = useJob(jobId);
+
+  const triggeredRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!jobId) return;
+    if (job.data?.status !== "done") return;
+    if (!job.data.file_path) return;
+    if (triggeredRef.current === jobId) return;
+    triggeredRef.current = jobId;
+    const link = document.createElement("a");
+    link.href = `/api/youtube-downloader/file/${jobId}`;
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }, [jobId, job.data?.status, job.data?.file_path]);
 
   const onProbe = async () => {
     setJobId(null);
@@ -193,9 +208,18 @@ function YoutubeDownloaderPage() {
             />
           </div>
           {job.data.status === "done" && job.data.file_path ? (
-            <p className="font-mono text-xs text-success" data-testid="job-file">
-              saved → {job.data.file_path}
-            </p>
+            <div className="space-y-1">
+              <p className="font-mono text-xs text-success" data-testid="job-file">
+                ✓ saved to your browser's Downloads folder
+              </p>
+              <a
+                href={`/api/youtube-downloader/file/${jobId}`}
+                download
+                className="font-mono text-[11px] text-subtle hover:text-accent underline-offset-2 hover:underline"
+              >
+                download again ↓
+              </a>
+            </div>
           ) : null}
           {job.data.status === "error" ? (
             <p className="font-mono text-xs text-error" role="alert">
