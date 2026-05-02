@@ -1,37 +1,61 @@
 import type { ComponentType } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { CronTab } from "./-tabs/cron";
+import { DiffTab } from "./-tabs/diff";
 import { EncoderDecoderTab } from "./-tabs/encoder-decoder";
 import { FormatConverterTab } from "./-tabs/format-converter";
 import { HashTab } from "./-tabs/hash";
+import { JwtTab } from "./-tabs/jwt";
 import { MarkdownTab } from "./-tabs/markdown";
+import { PasswordTab } from "./-tabs/password";
 import { QrTab } from "./-tabs/qr";
 import { RegexTab } from "./-tabs/regex";
+import { TimestampTab } from "./-tabs/timestamp";
+import { UuidTab } from "./-tabs/uuid";
 
 export type DevToolsTab =
   | "format"
   | "encode"
+  | "jwt"
   | "hash"
   | "qr"
   | "regex"
-  | "markdown";
+  | "markdown"
+  | "cron"
+  | "diff"
+  | "uuid"
+  | "timestamp"
+  | "password";
 
 const TABS: { id: DevToolsTab; label: string }[] = [
   { id: "format", label: "Format" },
   { id: "encode", label: "Encode" },
+  { id: "jwt", label: "JWT" },
   { id: "hash", label: "Hash" },
   { id: "qr", label: "QR" },
   { id: "regex", label: "Regex" },
   { id: "markdown", label: "Markdown" },
+  { id: "cron", label: "Cron" },
+  { id: "diff", label: "Diff" },
+  { id: "uuid", label: "UUID" },
+  { id: "timestamp", label: "Time" },
+  { id: "password", label: "Password" },
 ];
 
 const COMPONENTS: Record<DevToolsTab, ComponentType> = {
   format: FormatConverterTab,
   encode: EncoderDecoderTab,
+  jwt: JwtTab,
   hash: HashTab,
   qr: QrTab,
   regex: RegexTab,
   markdown: MarkdownTab,
+  cron: CronTab,
+  diff: DiffTab,
+  uuid: UuidTab,
+  timestamp: TimestampTab,
+  password: PasswordTab,
 };
 
 export const Route = createFileRoute("/dev-tools/")({
@@ -55,12 +79,12 @@ function DevToolsPage() {
         </p>
         <h1 className="font-mono text-3xl tracking-tight text-fg">Dev tools</h1>
         <p className="font-serif italic text-muted max-w-prose">
-          Six small helpers, each running entirely in the browser. Nothing leaves
-          this tab.
+          Twelve small helpers, each running entirely in the browser. Nothing
+          leaves this tab.
         </p>
       </header>
 
-      <nav className="flex gap-1 border-b border-border" aria-label="Dev tool tabs">
+      <nav className="flex flex-wrap gap-1 border-b border-border" aria-label="Dev tool tabs">
         {TABS.map((entry) => (
           <Link
             key={entry.id}
