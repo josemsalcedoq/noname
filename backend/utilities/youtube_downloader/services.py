@@ -72,10 +72,16 @@ def build_args(job: YoutubeJob, output_dir: Path) -> list[str]:
         args += ["-x", "--audio-format", "mp3", "--audio-quality", bitrate]
     else:
         if job.quality == "best":
-            video_fmt = "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+            video_fmt = (
+                "bestvideo[height<=1080]+bestaudio/best[height<=1080]"
+                "/bestvideo+bestaudio/best"
+            )
         else:
             height = job.quality.removesuffix("p")
-            video_fmt = f"bestvideo[height<={height}]+bestaudio/best[height<={height}]"
+            video_fmt = (
+                f"bestvideo[height<={height}]+bestaudio/best[height<={height}]"
+                "/bestvideo+bestaudio/best"
+            )
         args += ["-f", video_fmt, "--remux-video", "mp4"]
     args.append(job.url)
     return args
