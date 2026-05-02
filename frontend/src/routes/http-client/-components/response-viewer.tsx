@@ -13,18 +13,19 @@ export function ResponseViewer({
 }) {
   const [tab, setTab] = useState<"body" | "headers">("body");
 
+  const rawBody = result?.body ?? "";
   const prettyBody = useMemo(() => {
-    if (!result?.body) return "";
-    const trimmed = result.body.trim();
+    if (!rawBody) return "";
+    const trimmed = rawBody.trim();
     if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
       try {
-        return JSON.stringify(JSON.parse(result.body), null, 2);
+        return JSON.stringify(JSON.parse(rawBody), null, 2);
       } catch {
-        return result.body;
+        return rawBody;
       }
     }
-    return result.body;
-  }, [result?.body]);
+    return rawBody;
+  }, [rawBody]);
 
   if (isPending) {
     return (

@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as YoutubeDownloaderIndexRouteImport } from './routes/youtube-downloader/index'
 import { Route as TextTranslatorIndexRouteImport } from './routes/text-translator/index'
+import { Route as SrtTranslatorIndexRouteImport } from './routes/srt-translator/index'
 import { Route as SkillsIndexRouteImport } from './routes/skills/index'
 import { Route as PersonalHubIndexRouteImport } from './routes/personal-hub/index'
 import { Route as HttpClientIndexRouteImport } from './routes/http-client/index'
 import { Route as DocxTranslatorIndexRouteImport } from './routes/docx-translator/index'
 import { Route as DevToolsIndexRouteImport } from './routes/dev-tools/index'
+import { Route as AudioTranscriberIndexRouteImport } from './routes/audio-transcriber/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -31,6 +33,11 @@ const YoutubeDownloaderIndexRoute = YoutubeDownloaderIndexRouteImport.update({
 const TextTranslatorIndexRoute = TextTranslatorIndexRouteImport.update({
   id: '/text-translator/',
   path: '/text-translator/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SrtTranslatorIndexRoute = SrtTranslatorIndexRouteImport.update({
+  id: '/srt-translator/',
+  path: '/srt-translator/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SkillsIndexRoute = SkillsIndexRouteImport.update({
@@ -58,35 +65,46 @@ const DevToolsIndexRoute = DevToolsIndexRouteImport.update({
   path: '/dev-tools/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AudioTranscriberIndexRoute = AudioTranscriberIndexRouteImport.update({
+  id: '/audio-transcriber/',
+  path: '/audio-transcriber/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/audio-transcriber/': typeof AudioTranscriberIndexRoute
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/http-client/': typeof HttpClientIndexRoute
   '/personal-hub/': typeof PersonalHubIndexRoute
   '/skills/': typeof SkillsIndexRoute
+  '/srt-translator/': typeof SrtTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
   '/youtube-downloader/': typeof YoutubeDownloaderIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/audio-transcriber': typeof AudioTranscriberIndexRoute
   '/dev-tools': typeof DevToolsIndexRoute
   '/docx-translator': typeof DocxTranslatorIndexRoute
   '/http-client': typeof HttpClientIndexRoute
   '/personal-hub': typeof PersonalHubIndexRoute
   '/skills': typeof SkillsIndexRoute
+  '/srt-translator': typeof SrtTranslatorIndexRoute
   '/text-translator': typeof TextTranslatorIndexRoute
   '/youtube-downloader': typeof YoutubeDownloaderIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/audio-transcriber/': typeof AudioTranscriberIndexRoute
   '/dev-tools/': typeof DevToolsIndexRoute
   '/docx-translator/': typeof DocxTranslatorIndexRoute
   '/http-client/': typeof HttpClientIndexRoute
   '/personal-hub/': typeof PersonalHubIndexRoute
   '/skills/': typeof SkillsIndexRoute
+  '/srt-translator/': typeof SrtTranslatorIndexRoute
   '/text-translator/': typeof TextTranslatorIndexRoute
   '/youtube-downloader/': typeof YoutubeDownloaderIndexRoute
 }
@@ -94,42 +112,50 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/audio-transcriber/'
     | '/dev-tools/'
     | '/docx-translator/'
     | '/http-client/'
     | '/personal-hub/'
     | '/skills/'
+    | '/srt-translator/'
     | '/text-translator/'
     | '/youtube-downloader/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/audio-transcriber'
     | '/dev-tools'
     | '/docx-translator'
     | '/http-client'
     | '/personal-hub'
     | '/skills'
+    | '/srt-translator'
     | '/text-translator'
     | '/youtube-downloader'
   id:
     | '__root__'
     | '/'
+    | '/audio-transcriber/'
     | '/dev-tools/'
     | '/docx-translator/'
     | '/http-client/'
     | '/personal-hub/'
     | '/skills/'
+    | '/srt-translator/'
     | '/text-translator/'
     | '/youtube-downloader/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AudioTranscriberIndexRoute: typeof AudioTranscriberIndexRoute
   DevToolsIndexRoute: typeof DevToolsIndexRoute
   DocxTranslatorIndexRoute: typeof DocxTranslatorIndexRoute
   HttpClientIndexRoute: typeof HttpClientIndexRoute
   PersonalHubIndexRoute: typeof PersonalHubIndexRoute
   SkillsIndexRoute: typeof SkillsIndexRoute
+  SrtTranslatorIndexRoute: typeof SrtTranslatorIndexRoute
   TextTranslatorIndexRoute: typeof TextTranslatorIndexRoute
   YoutubeDownloaderIndexRoute: typeof YoutubeDownloaderIndexRoute
 }
@@ -155,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/text-translator'
       fullPath: '/text-translator/'
       preLoaderRoute: typeof TextTranslatorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/srt-translator/': {
+      id: '/srt-translator/'
+      path: '/srt-translator'
+      fullPath: '/srt-translator/'
+      preLoaderRoute: typeof SrtTranslatorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/skills/': {
@@ -192,16 +225,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevToolsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/audio-transcriber/': {
+      id: '/audio-transcriber/'
+      path: '/audio-transcriber'
+      fullPath: '/audio-transcriber/'
+      preLoaderRoute: typeof AudioTranscriberIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AudioTranscriberIndexRoute: AudioTranscriberIndexRoute,
   DevToolsIndexRoute: DevToolsIndexRoute,
   DocxTranslatorIndexRoute: DocxTranslatorIndexRoute,
   HttpClientIndexRoute: HttpClientIndexRoute,
   PersonalHubIndexRoute: PersonalHubIndexRoute,
   SkillsIndexRoute: SkillsIndexRoute,
+  SrtTranslatorIndexRoute: SrtTranslatorIndexRoute,
   TextTranslatorIndexRoute: TextTranslatorIndexRoute,
   YoutubeDownloaderIndexRoute: YoutubeDownloaderIndexRoute,
 }

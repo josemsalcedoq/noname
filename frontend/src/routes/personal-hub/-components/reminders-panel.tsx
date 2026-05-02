@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   useCompleteTodo,
@@ -16,7 +16,7 @@ export function RemindersPanel() {
   const dismiss = useDismissReminder();
   const complete = useCompleteTodo();
 
-  const items = reminders.data?.reminders ?? [];
+  const items = useMemo(() => reminders.data?.reminders ?? [], [reminders.data]);
 
   const notifiedRef = useRef<Set<number>>(new Set());
   const [permission, setPermission] = useState<NotificationPermission>(
