@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 
+import { consumeHandoff, setHandoff } from "../../lib/handoff";
 import { useTranscribe, type ModelSize } from "./api";
 
 export const Route = createFileRoute("/audio-transcriber/")({
@@ -23,6 +24,31 @@ function AudioTranscriberPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const transcribe = useTranscribe();
+  const navigate = useNavigate();
+  const handoffConsumed = useRef(false);
+
+  useEffect(() => {
+    if (handoffConsumed.current) return;
+    const handoff = consumeHandoff("yt-to-transcriber");
+    if (!handoff) return;
+    handoffConsumed.current = true;
+    let cancelled = false;
+    fetch(`/api/youtube-downloader/file/${handoff.jobId}`)
+      .then((response) => (response.ok ? response.blob() : null))
+      .then((blob) => {
+        if (cancelled || !blob) return;
+        const filename = handoff.filename ?? "from-youtube";
+        const incoming = new File([blob], filename, { type: blob.type || "video/mp4" });
+        setFile(incoming);
+        transcribe.reset();
+      })
+      .catch(() => {
+        if (!cancelled) setValidationError("Could not load the file from the YouTube job.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [transcribe]);
 
   const acceptFile = (candidate: File | undefined | null) => {
     if (!candidate) return;
@@ -41,6 +67,27 @@ function AudioTranscriberPage() {
   };
 
   const result = transcribe.data;
+
+  const onTranslateText = () => {
+    if (!result) return;
+    const target = result.language === "es" ? "en" : "es";
+    setHandoff({ kind: "text", text: result.text, source: result.language, target });
+    navigate({ to: "/text-translator" });
+  };
+
+  const onTranslateSrt = () => {
+    if (!result) return;
+    const source = result.language === "es" ? "es" : "en";
+    const target = source === "es" ? "en" : "es";
+    setHandoff({
+      kind: "srt",
+      content: result.srt,
+      source,
+      target,
+      filename: "transcription.srt",
+    });
+    navigate({ to: "/srt-translator" });
+  };
 
   return (
     <article className="space-y-8">
@@ -160,6 +207,24 @@ function AudioTranscriberPage() {
           <pre className="bg-bg border border-border rounded-sm p-3 font-serif text-sm text-fg whitespace-pre-wrap max-h-[24rem] overflow-auto">
             {result.text}
           </pre>
+          <div className="flex flex-wrap gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onTranslateText}
+              className="font-mono text-[11px] text-accent hover:underline underline-offset-2"
+              data-testid="send-to-text-translator"
+            >
+              translate text →
+            </button>
+            <button
+              type="button"
+              onClick={onTranslateSrt}
+              className="font-mono text-[11px] text-accent hover:underline underline-offset-2"
+              data-testid="send-to-srt-translator"
+            >
+              translate subtitles →
+            </button>
+          </div>
         </section>
       ) : null}
     </article>

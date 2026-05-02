@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { setHandoff } from "../../lib/handoff";
 import {
   useCancel,
   useJob,
@@ -28,6 +29,14 @@ function YoutubeDownloaderPage() {
   const startDownload = useStartDownload();
   const cancel = useCancel();
   const job = useJob(jobId);
+  const navigate = useNavigate();
+
+  const onSendToTranscriber = () => {
+    if (!jobId) return;
+    const filename = job.data?.file_path?.split("/").pop();
+    setHandoff({ kind: "yt-to-transcriber", jobId, filename });
+    navigate({ to: "/audio-transcriber" });
+  };
 
   const triggeredRef = useRef<string | null>(null);
   useEffect(() => {
@@ -208,17 +217,27 @@ function YoutubeDownloaderPage() {
             />
           </div>
           {job.data.status === "done" && job.data.file_path ? (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <p className="font-mono text-xs text-success" data-testid="job-file">
                 ✓ saved to your browser's Downloads folder
               </p>
-              <a
-                href={`/api/youtube-downloader/file/${jobId}`}
-                download
-                className="font-mono text-[11px] text-subtle hover:text-accent underline-offset-2 hover:underline"
-              >
-                download again ↓
-              </a>
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={`/api/youtube-downloader/file/${jobId}`}
+                  download
+                  className="font-mono text-[11px] text-subtle hover:text-accent underline-offset-2 hover:underline"
+                >
+                  download again ↓
+                </a>
+                <button
+                  type="button"
+                  onClick={onSendToTranscriber}
+                  className="font-mono text-[11px] text-accent hover:underline underline-offset-2"
+                  data-testid="send-to-transcriber"
+                >
+                  send to transcriber →
+                </button>
+              </div>
             </div>
           ) : null}
           {job.data.status === "error" ? (

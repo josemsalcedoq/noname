@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { consumeHandoff } from "../../lib/handoff";
 import { downloadResult, useTranslateSrt, type Lang } from "./api";
 
 export const Route = createFileRoute("/srt-translator/")({
@@ -18,6 +19,23 @@ function SrtTranslatorPage() {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const translate = useTranslateSrt();
+  const handoffConsumed = useRef(false);
+
+  useEffect(() => {
+    if (handoffConsumed.current) return;
+    const handoff = consumeHandoff("srt");
+    if (!handoff) return;
+    handoffConsumed.current = true;
+    if (handoff.source === "en" || handoff.source === "es") setSource(handoff.source);
+    if (handoff.target === "en" || handoff.target === "es") setTarget(handoff.target);
+    const blob = new Blob([handoff.content], { type: "application/x-subrip" });
+    const incoming = new File([blob], handoff.filename ?? "transcription.srt", {
+      type: "application/x-subrip",
+    });
+    setFile(incoming);
+    setValidationError(null);
+    translate.reset();
+  }, [translate]);
 
   const acceptFile = (candidate: File | undefined | null) => {
     if (!candidate) return;

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { consumeHandoff } from "../../lib/handoff";
 import {
   useTranslateText,
   type SourceLang,
@@ -23,6 +24,21 @@ function TextTranslatorPage() {
   const [copied, setCopied] = useState(false);
 
   const translate = useTranslateText();
+  const handoffConsumed = useRef(false);
+
+  useEffect(() => {
+    if (handoffConsumed.current) return;
+    const handoff = consumeHandoff("text");
+    if (!handoff) return;
+    handoffConsumed.current = true;
+    setInput(handoff.text);
+    if (handoff.source === "auto" || handoff.source === "en" || handoff.source === "es") {
+      setSource(handoff.source);
+    }
+    if (handoff.target === "en" || handoff.target === "es") {
+      setTarget(handoff.target);
+    }
+  }, []);
 
   const swap = () => {
     if (source === "auto") return;
