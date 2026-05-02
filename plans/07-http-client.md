@@ -16,7 +16,7 @@ A local HTTP client like Postman / Insomnia: organize saved requests in collecti
 | 2.1   | cURL import (paste a `curl ...` command, fill the editor)                              | done   |
 | 2.2   | "Copy as cURL" export (build curl command from current state, copy to clipboard)      | done   |
 | 2.3   | Request history (auto-recorded `RequestRun`, replay by clicking)                      | done   |
-| 2.4   | Auth tabs (Basic, Bearer) that auto-inject the `Authorization` header                 | future |
+| 2.4   | Auth tabs (Basic, Bearer) that auto-inject the `Authorization` header                 | done   |
 | 2.5   | Drag-drop reorder in the tree                                                         | future |
 | 3     | Pre-request and test scripts (sandboxed JS), GraphQL/WebSocket support                | future |
 

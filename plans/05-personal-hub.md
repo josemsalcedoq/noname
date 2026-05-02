@@ -10,11 +10,13 @@ Constant context-switching to other apps to jot a note, capture a todo, or check
 
 ## Scope by phase
 
-| Phase | Deliverable                                                  |
-|-------|--------------------------------------------------------------|
-| 1     | Notes CRUD (create / edit / archive / search / tag)          |
-| 2     | Todos CRUD (with `due_at`, completion, tags)                 |
-| 3     | Reminders (frontend polling + browser Notifications API)     |
+| Phase | Deliverable                                                                | Status |
+|-------|----------------------------------------------------------------------------|--------|
+| 1     | Notes CRUD (create / edit / archive / search / tag)                        | done   |
+| 2     | Todos CRUD (with `due_at`, completion, tags)                               | done   |
+| 3     | Reminders (frontend polling + browser Notifications API)                   | done   |
+| 4     | Markdown render in notes (`markdown-it` reused from dev-tools)             | done   |
+| 5     | Bookmarks tab (URL + title + notes + tags + search + archive)              | done   |
 
 Each phase ships independently. There is no Phase 4+; if we want richer features later (recurring todos, attachments, sharing) they come as separate plans.
 

@@ -307,3 +307,17 @@ Added six tabs to utility 04: dedicated JWT decoder, cron explainer, diff viewer
 - Request history panel: `RequestRun` model, auto-record on every send, replay by clicking.
 
 Phases 2.4 (auth tabs) and 2.5 (drag-drop reorder) still future. See `plans/07-http-client.md`.
+
+## Phase 18 — Polish + extensions (done)
+- **Markdown rendering** in personal-hub notes (was a known gap; markdown-it reused from dev-tools).
+- **Bookmarks tab** in personal-hub — third tab alongside Notes/Todos. Backend `Bookmark` model (URL, title, notes, tags, archive); CRUD endpoints; frontend tab with search.
+- **HTTP client auth tabs** (Phase 2.4) — Basic + Bearer auto-inject the `Authorization` header. Detects existing scheme on load.
+- **PDF Phase 2** — page operations: thumbnails endpoint (server-side render via pypdfium2 → base64 JPEGs), manipulate endpoint (reorder via output-order list, rotate per page in 90° increments, delete by omission). Frontend Pages tab with thumbnail grid + per-card up/down/rotate/delete buttons.
+
+Still future and explicitly *not* in this turn:
+- HTTP client drag-drop reorder (Phase 2.5)
+- HTTP client Phase 3 (sandboxed JS scripts, GraphQL/WebSocket)
+- PDF Phase 3 (PDF.js viewer + annotations)
+- PDF Phase 4 (searchable PDF via ocrmypdf)
+- PDF Phase 5+ (text-content editing, drawing, signing)
+- MCP Phase 2 (resources, prompts, YouTube tool with polling)
