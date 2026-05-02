@@ -242,6 +242,163 @@ def annotate_pdf(stream: io.BytesIO, annotations: list[dict]) -> bytes:
         return buffer.getvalue()
 
 
+def _pdf_text_escape(text: str) -> bytes:
+    safe = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    return safe.encode("latin-1", errors="replace")
+
+
+def _ensure_helvetica(page) -> str:
+    """Make sure /Helvetica is registered on the page and return its resource name."""
+    name = "/NNHelv"
+    if "/Resources" not in page or page["/Resources"] is None:
+        page["/Resources"] = pikepdf.Dictionary()
+    resources = page["/Resources"]
+    if "/Font" not in resources:
+        resources["/Font"] = pikepdf.Dictionary()
+    fonts = resources["/Font"]
+    if name not in fonts:
+        fonts[name] = pikepdf.Dictionary(
+            Type=pikepdf.Name("/Font"),
+            Subtype=pikepdf.Name("/Type1"),
+            BaseFont=pikepdf.Name("/Helvetica"),
+            Encoding=pikepdf.Name("/WinAnsiEncoding"),
+        )
+    return name
+
+
+def _page_size(page) -> tuple[float, float]:
+    box = page.get("/MediaBox") or [0, 0, 595, 842]
+    return float(box[2]) - float(box[0]), float(box[3]) - float(box[1])
+
+
+def stamp_pdf(
+    stream: io.BytesIO,
+    *,
+    mode: str,
+    text: str = "",
+    position: str = "center",
+    font_size: int = 36,
+) -> bytes:
+    """Add a text watermark or auto page numbers to every page.
+
+    mode = "watermark" — `text` rendered diagonally across the page center.
+    mode = "page_numbers" — "page N of M" in the chosen corner. `text` is the
+    template; supports {n} and {total}. Defaults to "page {n} of {total}".
+    position = top-left | top-right | bottom-left | bottom-right | center.
+    """
+    if mode not in ("watermark", "page_numbers"):
+        raise PdfError(f"unknown stamp mode '{mode}'")
+    if mode == "watermark" and not text.strip():
+        raise PdfError("watermark text is required")
+    template = text.strip() if mode == "page_numbers" else text
+    if mode == "page_numbers" and not template:
+        template = "page {n} of {total}"
+    size = max(6, min(200, int(font_size)))
+
+    stream.seek(0)
+    with pikepdf.open(stream) as pdf:
+        total = len(pdf.pages)
+        for index, page in enumerate(pdf.pages, start=1):
+            font_name = _ensure_helvetica(page)
+            width, height = _page_size(page)
+            if mode == "watermark":
+                instructions = _watermark_stream(text, font_name, size, width, height)
+            else:
+                rendered = template.replace("{n}", str(index)).replace("{total}", str(total))
+                instructions = _corner_text_stream(
+                    rendered, font_name, size, width, height, position
+                )
+            page.contents_add(instructions, prepend=False)
+        buffer = io.BytesIO()
+        pdf.save(buffer)
+        return buffer.getvalue()
+
+
+def _watermark_stream(
+    text: str, font_name: str, size: int, width: float, height: float
+) -> bytes:
+    import math
+
+    angle = math.radians(45)
+    cos_a = math.cos(angle)
+    sin_a = math.sin(angle)
+    cx = width / 2
+    cy = height / 2
+    text_bytes = _pdf_text_escape(text)
+    # Rough-estimate text width to recenter (Helvetica avg char ≈ 0.55 * size).
+    text_width = len(text) * size * 0.55
+    return (
+        b"q\n"
+        + b"0.75 0.75 0.75 rg\n"
+        + f"{cos_a:.4f} {sin_a:.4f} {-sin_a:.4f} {cos_a:.4f} {cx:.2f} {cy:.2f} cm\n".encode()
+        + b"BT\n"
+        + f"{font_name} {size} Tf\n".encode()
+        + f"{-text_width / 2:.2f} {-size / 2:.2f} Td\n".encode()
+        + b"(" + text_bytes + b") Tj\n"
+        + b"ET\n"
+        + b"Q\n"
+    )
+
+
+def _corner_text_stream(
+    text: str, font_name: str, size: int, width: float, height: float, position: str
+) -> bytes:
+    margin = 24
+    text_bytes = _pdf_text_escape(text)
+    text_width = len(text) * size * 0.55
+    if position == "top-left":
+        x, y = margin, height - margin - size
+    elif position == "top-right":
+        x, y = width - margin - text_width, height - margin - size
+    elif position == "bottom-left":
+        x, y = margin, margin
+    elif position == "center":
+        x, y = (width - text_width) / 2, (height - size) / 2
+    else:  # bottom-right is the default
+        x, y = width - margin - text_width, margin
+    return (
+        b"q\n"
+        + b"0.2 0.2 0.2 rg\n"
+        + b"BT\n"
+        + f"{font_name} {size} Tf\n".encode()
+        + f"{x:.2f} {y:.2f} Td\n".encode()
+        + b"(" + text_bytes + b") Tj\n"
+        + b"ET\n"
+        + b"Q\n"
+    )
+
+
+def encrypt_pdf(stream: io.BytesIO, *, owner_password: str, user_password: str) -> bytes:
+    """Save the PDF with AES-256 encryption. Both passwords required."""
+    if not owner_password or not user_password:
+        raise PdfError("both owner and user passwords are required")
+    stream.seek(0)
+    with pikepdf.open(stream) as pdf:
+        buffer = io.BytesIO()
+        pdf.save(
+            buffer,
+            encryption=pikepdf.Encryption(
+                owner=owner_password, user=user_password, R=6
+            ),
+        )
+        return buffer.getvalue()
+
+
+def decrypt_pdf(stream: io.BytesIO, *, password: str) -> bytes:
+    """Open a password-protected PDF and re-save without encryption."""
+    stream.seek(0)
+    try:
+        pdf = pikepdf.open(stream, password=password)
+    except pikepdf.PasswordError as exc:
+        raise PdfError("invalid password") from exc
+    try:
+        buffer = io.BytesIO()
+        pdf.save(buffer)
+        return buffer.getvalue()
+    finally:
+        pdf.close()
+
+
 def make_searchable(stream: io.BytesIO, *, languages: str = "eng+spa") -> bytes:
     """Run ocrmypdf to add a text layer to a scanned PDF and return the new PDF bytes.
 

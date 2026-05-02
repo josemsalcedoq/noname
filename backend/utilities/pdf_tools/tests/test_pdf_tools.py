@@ -49,6 +49,41 @@ def _given_multi(state, pages):
     )
 
 
+@when(parsers.parse('the client stamps with mode "{mode}" and text "{text}"'))
+def _stamp(state, client, mode, text):
+    state["response"] = client.post(
+        "/api/pdf-tools/stamp",
+        data={"file": state["uploads"]["doc.pdf"], "mode": mode, "text": text},
+        format="multipart",
+    )
+
+
+@when(parsers.parse('the client encrypts with owner "{owner}" and user "{user}"'))
+def _encrypt(state, client, owner, user):
+    state["response"] = client.post(
+        "/api/pdf-tools/encrypt",
+        data={
+            "file": state["uploads"]["doc.pdf"],
+            "owner_password": owner,
+            "user_password": user,
+        },
+        format="multipart",
+    )
+    if state["response"].status_code == 200:
+        state["uploads"]["encrypted.pdf"] = SimpleUploadedFile(
+            "encrypted.pdf", state["response"].content, content_type="application/pdf"
+        )
+
+
+@when(parsers.parse('the client decrypts the encrypted output with password "{password}"'))
+def _decrypt(state, client, password):
+    state["response"] = client.post(
+        "/api/pdf-tools/decrypt",
+        data={"file": state["uploads"]["encrypted.pdf"], "password": password},
+        format="multipart",
+    )
+
+
 @when("the client uploads both files to merge")
 def _merge_two(state, client):
     files = list(state["uploads"].values())

@@ -23,6 +23,8 @@ Local-only PDF operations behind a tabbed page: merge multiple PDFs into one, sp
 | 4     | Searchable PDF output (text layer via `ocrmypdf`)             | done   |
 | 5     | AcroForm fill (discover field names + write back values)      | done   |
 | 5.1   | XFA forms (Adobe-only — out of scope, document)               | future |
+| 5.2   | Stamp: text watermark + auto page numbers (content-stream overlay) | done   |
+| 5.3   | Security: AES-256 encrypt with owner+user passwords / decrypt | done   |
 | 6     | Text-content editing, cryptographic signatures                | future |
 
 ## Inputs / Outputs

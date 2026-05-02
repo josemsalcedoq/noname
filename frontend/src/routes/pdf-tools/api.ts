@@ -145,6 +145,57 @@ export function useAnnotate() {
   });
 }
 
+export type StampMode = "watermark" | "page_numbers";
+export type StampPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right"
+  | "center";
+
+export function useStampPdf() {
+  return useMutation({
+    mutationFn: async (input: {
+      file: File;
+      mode: StampMode;
+      text: string;
+      position: StampPosition;
+      fontSize: number;
+    }) => {
+      const body = new FormData();
+      body.append("file", input.file);
+      body.append("mode", input.mode);
+      body.append("text", input.text);
+      body.append("position", input.position);
+      body.append("font_size", String(input.fontSize));
+      return postMultipartBlob("/api/pdf-tools/stamp", body);
+    },
+  });
+}
+
+export function useEncryptPdf() {
+  return useMutation({
+    mutationFn: async (input: { file: File; ownerPassword: string; userPassword: string }) => {
+      const body = new FormData();
+      body.append("file", input.file);
+      body.append("owner_password", input.ownerPassword);
+      body.append("user_password", input.userPassword);
+      return postMultipartBlob("/api/pdf-tools/encrypt", body);
+    },
+  });
+}
+
+export function useDecryptPdf() {
+  return useMutation({
+    mutationFn: async (input: { file: File; password: string }) => {
+      const body = new FormData();
+      body.append("file", input.file);
+      body.append("password", input.password);
+      return postMultipartBlob("/api/pdf-tools/decrypt", body);
+    },
+  });
+}
+
 export function useMakeSearchable() {
   return useMutation({
     mutationFn: async (input: { file: File; languages: string }) => {

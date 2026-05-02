@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   downloadBlob,
   useAnnotate,
+  useDecryptPdf,
   useDiscoverFields,
+  useEncryptPdf,
   useExtractText,
   useFillForm,
   useMakeSearchable,
@@ -12,11 +14,14 @@ import {
   useMergePdfs,
   useOcrPdf,
   useSplitPdf,
+  useStampPdf,
   useThumbnails,
   type ExtractTextResult,
   type FormField,
   type PageOperation,
   type PdfAnnotation,
+  type StampMode,
+  type StampPosition,
 } from "./api";
 
 type PdfTab =
@@ -25,6 +30,8 @@ type PdfTab =
   | "pages"
   | "view"
   | "annotate"
+  | "stamp"
+  | "security"
   | "extract"
   | "ocr"
   | "searchable"
@@ -33,6 +40,7 @@ type PdfTab =
 const TABS: { id: PdfTab; label: string }[] = [
   { id: "view", label: "View" },
   { id: "annotate", label: "Annotate" },
+  { id: "stamp", label: "Stamp" },
   { id: "merge", label: "Merge" },
   { id: "split", label: "Split" },
   { id: "pages", label: "Pages" },
@@ -40,6 +48,7 @@ const TABS: { id: PdfTab; label: string }[] = [
   { id: "extract", label: "Extract text" },
   { id: "ocr", label: "OCR" },
   { id: "searchable", label: "Searchable" },
+  { id: "security", label: "Security" },
 ];
 
 export const Route = createFileRoute("/pdf-tools/")({
@@ -89,6 +98,8 @@ function PdfToolsPage() {
       <section className="pt-2">
         {tab === "view" ? <ViewTab /> : null}
         {tab === "annotate" ? <AnnotateTab /> : null}
+        {tab === "stamp" ? <StampTab /> : null}
+        {tab === "security" ? <SecurityTab /> : null}
         {tab === "merge" ? <MergeTab /> : null}
         {tab === "split" ? <SplitTab /> : null}
         {tab === "pages" ? <PagesTab /> : null}
@@ -1032,6 +1043,255 @@ function AnnotateTab() {
           ) : null}
         </>
       ) : null}
+    </div>
+  );
+}
+
+function StampTab() {
+  const [file, setFile] = useState<File | null>(null);
+  const [mode, setMode] = useState<StampMode>("watermark");
+  const [text, setText] = useState("DRAFT");
+  const [position, setPosition] = useState<StampPosition>("bottom-right");
+  const [fontSize, setFontSize] = useState(36);
+  const stamp = useStampPdf();
+
+  useEffect(() => {
+    if (mode === "page_numbers") {
+      setText((prev) => (prev === "DRAFT" ? "page {n} of {total}" : prev));
+      setFontSize((prev) => (prev === 36 ? 14 : prev));
+    } else {
+      setText((prev) => (prev.includes("{n}") ? "DRAFT" : prev));
+      setFontSize((prev) => (prev === 14 ? 36 : prev));
+    }
+  }, [mode]);
+
+  const onApply = async () => {
+    if (!file || !text.trim()) return;
+    const result = await stamp.mutateAsync({ file, mode, text, position, fontSize });
+    downloadBlob(result.blob, result.filename);
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="font-serif italic text-muted text-sm max-w-prose">
+        Burn a watermark into every page or auto-number pages. Renders directly
+        into each page&rsquo;s content stream — visible in any reader, not a
+        sidecar annotation.
+      </p>
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="block w-full font-mono text-xs file:mr-3 file:px-3 file:py-1.5 file:bg-accent file:text-bg file:border-0 file:rounded-sm file:font-mono file:text-xs file:cursor-pointer text-muted"
+        data-testid="stamp-input"
+      />
+
+      <div className="flex flex-wrap gap-3">
+        <label className="block">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+            Mode
+          </span>
+          <select
+            value={mode}
+            onChange={(e) => setMode(e.target.value as StampMode)}
+            className="mt-2 bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+            data-testid="stamp-mode"
+          >
+            <option value="watermark">Watermark (diagonal)</option>
+            <option value="page_numbers">Page numbers</option>
+          </select>
+        </label>
+        {mode === "page_numbers" ? (
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+              Position
+            </span>
+            <select
+              value={position}
+              onChange={(e) => setPosition(e.target.value as StampPosition)}
+              className="mt-2 bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+              data-testid="stamp-position"
+            >
+              <option value="bottom-right">bottom-right</option>
+              <option value="bottom-left">bottom-left</option>
+              <option value="top-right">top-right</option>
+              <option value="top-left">top-left</option>
+              <option value="center">center</option>
+            </select>
+          </label>
+        ) : null}
+        <label className="block">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+            Font size
+          </span>
+          <input
+            type="number"
+            min={6}
+            max={200}
+            value={fontSize}
+            onChange={(e) => setFontSize(Number(e.target.value) || 12)}
+            className="mt-2 w-24 bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+            data-testid="stamp-font-size"
+          />
+        </label>
+      </div>
+
+      <label className="block">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+          {mode === "watermark" ? "Watermark text" : "Page number template — supports {n} and {total}"}
+        </span>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={mode === "watermark" ? "DRAFT" : "page {n} of {total}"}
+          className="mt-2 w-full bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+          data-testid="stamp-text"
+        />
+      </label>
+
+      <button
+        type="button"
+        onClick={onApply}
+        disabled={!file || !text.trim() || stamp.isPending}
+        className="px-4 py-2 bg-accent text-bg font-mono text-sm rounded-sm hover:opacity-90 disabled:opacity-40"
+        data-testid="stamp-apply"
+      >
+        {stamp.isPending ? "stamping…" : "stamp & download"}
+      </button>
+      {stamp.isError ? (
+        <p className="font-mono text-xs text-error" role="alert">
+          {(stamp.error as Error).message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function SecurityTab() {
+  const [mode, setMode] = useState<"encrypt" | "decrypt">("encrypt");
+  const [file, setFile] = useState<File | null>(null);
+  const [ownerPassword, setOwnerPassword] = useState("");
+  const [userPassword, setUserPassword] = useState("");
+  const [decryptPassword, setDecryptPassword] = useState("");
+  const encrypt = useEncryptPdf();
+  const decrypt = useDecryptPdf();
+
+  const onEncrypt = async () => {
+    if (!file || !ownerPassword || !userPassword) return;
+    const result = await encrypt.mutateAsync({ file, ownerPassword, userPassword });
+    downloadBlob(result.blob, result.filename);
+  };
+  const onDecrypt = async () => {
+    if (!file || !decryptPassword) return;
+    const result = await decrypt.mutateAsync({ file, password: decryptPassword });
+    downloadBlob(result.blob, result.filename);
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="font-serif italic text-muted text-sm max-w-prose">
+        AES-256 password protection via pikepdf. Encrypt sets two passwords —
+        owner controls permissions, user is required to open. Decrypt strips
+        protection from a PDF you already know the password to.
+      </p>
+
+      <div className="flex gap-1 border border-border rounded-sm overflow-hidden w-fit font-mono text-xs">
+        {(["encrypt", "decrypt"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={
+              mode === m
+                ? "px-3 py-1.5 bg-accent text-bg"
+                : "px-3 py-1.5 text-subtle hover:text-fg"
+            }
+            data-testid={`security-mode-${m}`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="block w-full font-mono text-xs file:mr-3 file:px-3 file:py-1.5 file:bg-accent file:text-bg file:border-0 file:rounded-sm file:font-mono file:text-xs file:cursor-pointer text-muted"
+        data-testid="security-input"
+      />
+
+      {mode === "encrypt" ? (
+        <>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+              Owner password (full access)
+            </span>
+            <input
+              type="password"
+              value={ownerPassword}
+              onChange={(e) => setOwnerPassword(e.target.value)}
+              className="mt-2 w-full bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+              data-testid="security-owner"
+            />
+          </label>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+              User password (required to open)
+            </span>
+            <input
+              type="password"
+              value={userPassword}
+              onChange={(e) => setUserPassword(e.target.value)}
+              className="mt-2 w-full bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+              data-testid="security-user"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={onEncrypt}
+            disabled={!file || !ownerPassword || !userPassword || encrypt.isPending}
+            className="px-4 py-2 bg-accent text-bg font-mono text-sm rounded-sm hover:opacity-90 disabled:opacity-40"
+            data-testid="security-encrypt"
+          >
+            {encrypt.isPending ? "encrypting…" : "encrypt & download"}
+          </button>
+          {encrypt.isError ? (
+            <p className="font-mono text-xs text-error" role="alert">
+              {(encrypt.error as Error).message}
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-subtle">
+              Password
+            </span>
+            <input
+              type="password"
+              value={decryptPassword}
+              onChange={(e) => setDecryptPassword(e.target.value)}
+              className="mt-2 w-full bg-bg border border-border text-fg font-mono text-sm px-3 py-2 rounded-sm focus:border-accent focus:outline-none"
+              data-testid="security-password"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={onDecrypt}
+            disabled={!file || !decryptPassword || decrypt.isPending}
+            className="px-4 py-2 bg-accent text-bg font-mono text-sm rounded-sm hover:opacity-90 disabled:opacity-40"
+            data-testid="security-decrypt"
+          >
+            {decrypt.isPending ? "decrypting…" : "decrypt & download"}
+          </button>
+          {decrypt.isError ? (
+            <p className="font-mono text-xs text-error" role="alert">
+              {(decrypt.error as Error).message}
+            </p>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

@@ -31,3 +31,37 @@ Feature: PDF tools operations
     Then the response status is 200
     And the response page_count equals 1
     And the response text contains "hello world"
+
+  Scenario: Stamp PDF with watermark
+    Given a 3-page PDF
+    When the client stamps with mode "watermark" and text "DRAFT"
+    Then the response status is 200
+    And the response is a PDF with 3 pages
+
+  Scenario: Stamp PDF with page numbers
+    Given a 4-page PDF
+    When the client stamps with mode "page_numbers" and text "{n}/{total}"
+    Then the response status is 200
+    And the response is a PDF with 4 pages
+
+  Scenario: Stamp rejects unknown mode
+    Given a 1-page PDF
+    When the client stamps with mode "spray" and text "x"
+    Then the response status is 400
+    And the response error code is "stamp_failed"
+
+  Scenario: Encrypt then decrypt round-trip
+    Given a 2-page PDF
+    When the client encrypts with owner "owner-pw" and user "user-pw"
+    Then the response status is 200
+    When the client decrypts the encrypted output with password "user-pw"
+    Then the response status is 200
+    And the response is a PDF with 2 pages
+
+  Scenario: Decrypt rejects wrong password
+    Given a 2-page PDF
+    When the client encrypts with owner "owner-pw" and user "user-pw"
+    Then the response status is 200
+    When the client decrypts the encrypted output with password "wrong"
+    Then the response status is 403
+    And the response error code is "decrypt_failed"

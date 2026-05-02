@@ -358,3 +358,13 @@ Honest still-future:
 - PDF Phase 3.1+ — highlight rectangles (subtype `/Highlight` with `QuadPoints`), ink/freehand annotations, free-text overlays. Each one is its own canvas state machine.
 - PDF Phase 6 — text-content editing + cryptographic signatures — unchanged: Acrobat-equivalent territory.
 - HTTP client — proper JS sandbox (vm2-style) for both pre-request and test scripts, if this ever leaves single-user local.
+
+## Phase 22 — Second autonomous "more" pass (done)
+- **PDF Phase 5.2 — Stamp tab (watermark + page numbers).** `POST /pdf-tools/stamp` (multipart `file, mode, text, position, font_size`). `services.stamp_pdf` registers `/Helvetica` on each page's `/Resources/Font` then appends a content-stream chunk via `page.contents_add(...)`. Modes: `watermark` renders the text rotated 45° at the page center in light gray; `page_numbers` renders `text` (with `{n}`/`{total}` substitution) in a corner. No new deps — pure pikepdf + raw PDF operators. Frontend: new "Stamp" tab with mode toggle, position selector (only shown for page numbers), font-size input, text input (smart defaults flip when switching modes).
+- **PDF Phase 5.3 — Security tab (encrypt + decrypt).** `POST /pdf-tools/encrypt` takes `owner_password + user_password`, saves the PDF with `pikepdf.Encryption(R=6)` (AES-256). `POST /pdf-tools/decrypt` takes a `password`, opens the PDF with it, re-saves clean — wrong password returns 403 `decrypt_failed`. Frontend: single "Security" tab with encrypt/decrypt sub-mode pills.
+- 5 new BDD scenarios in `pdf_tools/tests/features/operations.feature` (watermark, page numbers, unknown mode, encrypt/decrypt round-trip, wrong-password). Backend: 68/68 passing (10 in pdf_tools).
+
+Honest still-future (unchanged from Phase 21):
+- PDF highlight/ink/free-text annotations beyond sticky notes.
+- PDF text-content editing + cryptographic signatures.
+- Sandboxed JS for HTTP client scripts.

@@ -256,6 +256,106 @@ class AnnotateView(APIView):
         return response
 
 
+class StampView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        upload = request.FILES.get("file")
+        mode = (request.data.get("mode") or "").strip()
+        text = request.data.get("text", "")
+        position = request.data.get("position", "bottom-right")
+        font_size_raw = request.data.get("font_size", "36")
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            font_size = int(font_size_raw)
+        except (TypeError, ValueError):
+            return _error(status.HTTP_400_BAD_REQUEST, "invalid_font_size", "font_size must be an integer.")
+        try:
+            result = services.stamp_pdf(
+                io.BytesIO(upload.read()),
+                mode=mode,
+                text=text,
+                position=position,
+                font_size=font_size,
+            )
+        except services.PdfError as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "stamp_failed", str(exc))
+        stem = Path(upload.name).stem
+        response = HttpResponse(result, content_type=PDF_MIME)
+        response["Content-Disposition"] = f'attachment; filename="{stem}_stamped.pdf"'
+        return response
+
+
+class EncryptView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        upload = request.FILES.get("file")
+        owner = request.data.get("owner_password", "") or ""
+        user = request.data.get("user_password", "") or ""
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            result = services.encrypt_pdf(
+                io.BytesIO(upload.read()), owner_password=owner, user_password=user
+            )
+        except services.PdfError as exc:
+            return _error(status.HTTP_400_BAD_REQUEST, "encrypt_failed", str(exc))
+        stem = Path(upload.name).stem
+        response = HttpResponse(result, content_type=PDF_MIME)
+        response["Content-Disposition"] = f'attachment; filename="{stem}_encrypted.pdf"'
+        return response
+
+
+class DecryptView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        upload = request.FILES.get("file")
+        password = request.data.get("password", "") or ""
+        if upload is None:
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "missing_file", "A 'file' field is required."
+            )
+        if not upload.name.lower().endswith(".pdf"):
+            return _error(
+                status.HTTP_400_BAD_REQUEST, "unsupported_format", "Only .pdf files accepted."
+            )
+        if upload.size > MAX_BYTES:
+            return _error(
+                status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file_too_large", "Maximum 100 MB."
+            )
+        try:
+            result = services.decrypt_pdf(io.BytesIO(upload.read()), password=password)
+        except services.PdfError as exc:
+            return _error(status.HTTP_403_FORBIDDEN, "decrypt_failed", str(exc))
+        stem = Path(upload.name).stem
+        response = HttpResponse(result, content_type=PDF_MIME)
+        response["Content-Disposition"] = f'attachment; filename="{stem}_decrypted.pdf"'
+        return response
+
+
 class SearchableView(APIView):
     parser_classes = [MultiPartParser]
 

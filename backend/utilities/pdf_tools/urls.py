@@ -2,6 +2,8 @@ from django.urls import path
 
 from .views import (
     AnnotateView,
+    DecryptView,
+    EncryptView,
     ExtractTextView,
     FormFieldsView,
     FormFillView,
@@ -10,6 +12,7 @@ from .views import (
     OcrView,
     SearchableView,
     SplitView,
+    StampView,
     ThumbnailsView,
 )
 
@@ -22,6 +25,9 @@ urlpatterns = [
     path("thumbnails", ThumbnailsView.as_view(), name="pdf-thumbnails"),
     path("manipulate", ManipulateView.as_view(), name="pdf-manipulate"),
     path("annotate", AnnotateView.as_view(), name="pdf-annotate"),
+    path("stamp", StampView.as_view(), name="pdf-stamp"),
+    path("encrypt", EncryptView.as_view(), name="pdf-encrypt"),
+    path("decrypt", DecryptView.as_view(), name="pdf-decrypt"),
     path("form/fields", FormFieldsView.as_view(), name="pdf-form-fields"),
     path("form/fill", FormFillView.as_view(), name="pdf-form-fill"),
 ]
